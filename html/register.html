@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register — API Tester</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      background: #0f1117;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #e2e8f0;
+    }
+
+    /* ── Layout ── */
+    .pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 36px 32px;
+      min-width: 0;
+    }
+
+    .divider {
+      width: 1px;
+      background: #1e2130;
+    }
+
+    /* ── Typography ── */
+    h2 {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin-bottom: 16px;
+    }
+
+    /* ── Endpoint bar ── */
+    .endpoint {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1a1d2e;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 24px;
+      font-size: 0.85rem;
+    }
+
+    .method {
+      background: #6366f1;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .url { color: #94a3b8; font-family: monospace; }
+
+    /* ── JSON editor ── */
+    .editor-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    textarea {
+      flex: 1;
+      width: 100%;
+      min-height: 320px;
+      background: #1a1d2e;
+      border: 1.5px solid #2d3148;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      padding: 16px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus { border-color: #6366f1; }
+
+    .json-error {
+      font-size: 0.78rem;
+      color: #f87171;
+      margin-top: 6px;
+      min-height: 18px;
+    }
+
+    /* ── Send button ── */
+    button#sendBtn {
+      margin-top: 16px;
+      padding: 11px 28px;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      align-self: flex-start;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    button#sendBtn:hover { background: #4f46e5; }
+    button#sendBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Response pane ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      min-height: 28px;
+    }
+
+    .badge {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .badge.ok   { background: #064e3b; color: #6ee7b7; }
+    .badge.err  { background: #7f1d1d; color: #fca5a5; }
+    .badge.idle { background: #1e2130; color: #6b7280; }
+
+    .response-time { font-size: 0.78rem; color: #6b7280; }
+
+    /* ── Response fields ── */
+    .fields {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .field {
+      background: #1a1d2e;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+
+    .field-key {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6366f1;
+      margin-bottom: 4px;
+    }
+
+    .field-val {
+      font-family: "Fira Code", Consolas, monospace;
+      font-size: 0.88rem;
+      color: #e2e8f0;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    .field-val.null-val { color: #6b7280; font-style: italic; }
+    .field-val.true-val { color: #6ee7b7; }
+    .field-val.false-val { color: #f87171; }
+
+    .raw-toggle {
+      margin-top: 16px;
+      font-size: 0.78rem;
+      color: #6b7280;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .raw-toggle:hover { color: #94a3b8; }
+
+    .raw-block {
+      display: none;
+      margin-top: 8px;
+      background: #1a1d2e;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-family: "Fira Code", Consolas, monospace;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2d3148; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+  <!-- LEFT: Request -->
+  <div class="pane">
+    <h2>Request</h2>
+
+    <div class="endpoint">
+      <span class="method">POST</span>
+      <span class="url">http://localhost:5000/api/auth/register</span>
+    </div>
+
+    <div class="editor-wrap">
+      <textarea id="jsonInput" spellcheck="false">{
+  "fullName": "Nguyen Van A",
+  "email": "a@example.com",
+  "password": "Password123!",
+  "confirmPassword": "Password123!",
+  "role": "User"
+}</textarea>
+      <div class="json-error" id="jsonError"></div>
+    </div>
+
+    <button id="sendBtn" type="button">Send</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- RIGHT: Response -->
+  <div class="pane">
+    <h2>Response</h2>
+
+    <div class="status-bar">
+      <span class="badge idle" id="statusBadge">—</span>
+      <span class="response-time" id="responseTime"></span>
+    </div>
+
+    <div class="fields" id="fields">
+      <div class="field">
+        <div class="field-key">Chờ request...</div>
+        <div class="field-val null-val">Nhấn Send để gửi request</div>
+      </div>
+    </div>
+
+    <div class="raw-toggle" id="rawToggle" style="display:none">▶ Raw JSON</div>
+    <div class="raw-block" id="rawBlock"></div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:5000/api/auth/register';
+
+    const jsonInput   = document.getElementById('jsonInput');
+    const jsonError   = document.getElementById('jsonError');
+    const sendBtn     = document.getElementById('sendBtn');
+    const statusBadge = document.getElementById('statusBadge');
+    const responseTime= document.getElementById('responseTime');
+    const fieldsEl    = document.getElementById('fields');
+    const rawToggle   = document.getElementById('rawToggle');
+    const rawBlock    = document.getElementById('rawBlock');
+
+    // Live JSON validation
+    jsonInput.addEventListener('input', () => {
+      try { JSON.parse(jsonInput.value); jsonError.textContent = ''; }
+      catch (e) { jsonError.textContent = '⚠ ' + e.message; }
+    });
+
+    // Raw toggle
+    rawToggle.addEventListener('click', () => {
+      const open = rawBlock.style.display === 'block';
+      rawBlock.style.display = open ? 'none' : 'block';
+      rawToggle.textContent  = (open ? '▶' : '▼') + ' Raw JSON';
+    });
+
+    function renderValue(val) {
+      if (val === null || val === undefined) return '<span class="null-val">null</span>';
+      if (val === true)  return '<span class="true-val">true</span>';
+      if (val === false) return '<span class="false-val">false</span>';
+      if (Array.isArray(val)) {
+        if (val.length === 0) return '<span class="null-val">[]</span>';
+        return val.map(v => `• ${v}`).join('\n');
+      }
+      if (typeof val === 'object') return JSON.stringify(val, null, 2);
+      return String(val);
+    }
+
+    function renderFields(data) {
+      // Known ApiResponse<T> fields in display order
+      const order = ['success', 'statusCode', 'message', 'data', 'errors'];
+      const keys  = [...new Set([...order, ...Object.keys(data)])];
+
+      fieldsEl.innerHTML = keys.map(key => {
+        if (!(key in data)) return '';
+        const val     = data[key];
+        const rendered= renderValue(val);
+        const cls     = val === null || val === undefined ? 'null-val'
+                      : val === true  ? 'true-val'
+                      : val === false ? 'false-val' : '';
+        return `
+          <div class="field">
+            <div class="field-key">${key}</div>
+            <div class="field-val ${cls}">${rendered}</div>
+          </div>`;
+      }).join('');
+    }
+
+    sendBtn.addEventListener('click', async () => {
+      // Validate JSON
+      let payload;
+      try { payload = JSON.parse(jsonInput.value); }
+      catch (e) { jsonError.textContent = '⚠ JSON không hợp lệ: ' + e.message; return; }
+
+      // Loading state
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<span class="spinner"></span>Sending...';
+      statusBadge.className = 'badge idle';
+      statusBadge.textContent = '...';
+      responseTime.textContent = '';
+      rawToggle.style.display = 'none';
+      rawBlock.style.display  = 'none';
+      fieldsEl.innerHTML = '';
+
+      const t0 = performance.now();
+
+      try {
+        const res  = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const elapsed = Math.round(performance.now() - t0);
+        const data    = await res.json();
+
+        // Status badge
+        statusBadge.className   = res.ok ? 'badge ok' : 'badge err';
+        statusBadge.textContent = `HTTP ${res.status}`;
+        responseTime.textContent= `${elapsed} ms`;
+
+        renderFields(data);
+
+        rawBlock.textContent    = JSON.stringify(data, null, 2);
+        rawToggle.style.display = 'block';
+        rawToggle.textContent   = '▶ Raw JSON';
+
+      } catch (err) {
+        const elapsed = Math.round(performance.now() - t0);
+        statusBadge.className   = 'badge err';
+        statusBadge.textContent = 'Network Error';
+        responseTime.textContent= `${elapsed} ms`;
+
+        fieldsEl.innerHTML = `
+          <div class="field">
+            <div class="field-key">error</div>
+            <div class="field-val false-val">${err.message}</div>
+          </div>`;
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+      }
+    });
+  </script>
+</body>
+</html>

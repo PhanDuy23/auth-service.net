@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f1117;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #e2e8f0;
+    }
+
+    .card {
+      background: #1a1d2e;
+      border: 1px solid #2d3148;
+      border-radius: 12px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 520px;
+      text-align: center;
+    }
+
+    .avatar {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: #059669;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem;
+      margin: 0 auto 20px;
+    }
+
+    .avatar.loading { background: #1e2130; animation: pulse 1.2s ease-in-out infinite; }
+
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 6px; }
+
+    .subtitle { font-size: 0.88rem; color: #6b7280; margin-bottom: 24px; }
+
+    /* ── Info grid ── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .info-item {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+
+    .info-item.full { grid-column: span 2; }
+
+    .info-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #059669;
+      margin-bottom: 4px;
+    }
+
+    .info-val {
+      font-size: 0.88rem;
+      color: #cbd5e1;
+      word-break: break-all;
+    }
+
+    .badge-active {
+      display: inline-block;
+      background: #064e3b;
+      color: #6ee7b7;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    /* ── Token box ── */
+    .token-box {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 12px 14px;
+      text-align: left;
+      margin-bottom: 20px;
+    }
+
+    .token-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #fbbf24;
+      margin-bottom: 6px;
+    }
+
+    .token-val {
+      font-family: "Fira Code", Consolas, monospace;
+      font-size: 0.75rem;
+      color: #fbbf24;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    /* ── Error notice ── */
+    .error-notice {
+      background: #7f1d1d22;
+      border: 1px solid #f8717144;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      color: #fca5a5;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    /* ── Buttons ── */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+
+    .btn-refresh {
+      background: #1e2130;
+      color: #94a3b8;
+      border-color: #2d3148;
+    }
+
+    .btn-refresh:hover { background: #2d3148; color: #e2e8f0; }
+    .btn-refresh:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-logout {
+      background: transparent;
+      color: #f87171;
+      border-color: #f87171;
+    }
+
+    .btn-logout:hover { background: #7f1d1d; color: #fca5a5; border-color: #fca5a5; }
+
+    /* ── No session ── */
+    .no-session { color: #6b7280; font-size: 0.9rem; line-height: 1.7; }
+    .no-session a { color: #059669; text-decoration: none; font-weight: 600; }
+    .no-session a:hover { text-decoration: underline; }
+
+    .spinner {
+      display: inline-block;
+      width: 13px; height: 13px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #94a3b8;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 5px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card" id="app"></div>
+
+  <script>
+    const API_ME     = 'http://localhost:5000/api/me';
+    const API_LOGOUT = 'http://localhost:5000/api/auth/logout';
+    const API_REFRESH = 'http://localhost:5000/api/auth/refresh-access-token';
+    const app = document.getElementById('app');
+
+    // ── In-memory token store (không lưu localStorage/sessionStorage) ─────────
+    // Dùng sessionStorage chỉ để truyền token qua redirect từ login.html
+    // Sau khi đọc xong thì xóa ngay, giữ trong biến JS
+    let _accessToken = (() => {
+      const t = sessionStorage.getItem('accessToken');
+      if (t) sessionStorage.removeItem('accessToken'); // xóa ngay sau khi đọc
+      return t || null;
+    })();
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    function fmtDate(val) {
+      if (!val) return '—';
+      return new Date(val).toLocaleString('vi-VN');
+    }
+
+    function getToken() { return _accessToken; }
+    function setToken(t) { _accessToken = t; }
+
+    function clearSession() { _accessToken = null; }
+
+    // ── Render states ─────────────────────────────────────────────────────────
+
+    function renderNoSession() {
+      app.innerHTML = `
+        <div class="avatar">🔒</div>
+        <h1>Chưa đăng nhập</h1>
+        <p class="no-session" style="margin-top:12px">
+          Bạn chưa có phiên đăng nhập hợp lệ.<br/>
+          <a href="login.html">← Quay lại trang Login</a>
+        </p>`;
+    }
+
+    function renderLoading() {
+      app.innerHTML = `
+        <div class="avatar loading">⏳</div>
+        <h1>Đang tải...</h1>
+        <p class="subtitle">Đang lấy thông tin từ server</p>`;
+    }
+
+    function renderProfile(profile, token) {
+      const roles = Array.isArray(profile.roles) ? profile.roles.join(', ') : '—';
+
+      app.innerHTML = `
+        <div class="avatar">✓</div>
+        <h1>Xin chào, ${profile.fullName || 'User'}</h1>
+        <p class="subtitle">${profile.email}</p>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Full Name</div>
+            <div class="info-val">${profile.fullName || '—'}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Email</div>
+            <div class="info-val">${profile.email}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Roles</div>
+            <div class="info-val">${roles}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Trạng thái</div>
+            <div class="info-val">
+              <span class="badge-active">${profile.isActive ? 'Active' : 'Inactive'}</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Ngày tạo</div>
+            <div class="info-val">${fmtDate(profile.createdAt)}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Đăng nhập lần cuối</div>
+            <div class="info-val">${fmtDate(profile.lastLoginAt)}</div>
+          </div>
+          <div class="info-item full">
+            <div class="info-label">User ID</div>
+            <div class="info-val">${profile.id}</div>
+          </div>
+        </div>
+
+        <div class="token-box">
+          <div class="token-label">Access Token</div>
+          <div class="token-val">${token}</div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-refresh" id="btnRefresh" onclick="loadProfile()">
+            Làm mới
+          </button>
+          <button class="btn btn-logout" onclick="logout()">Đăng xuất</button>
+        </div>`;
+    }
+
+    function renderError(message) {
+      const token = getToken();
+      app.innerHTML = `
+        <div class="avatar">⚠️</div>
+        <h1>Lỗi tải dữ liệu</h1>
+        <div class="error-notice" style="margin-top:16px">${message}</div>
+        <div class="btn-row">
+          <button class="btn btn-refresh" onclick="loadProfile()">Thử lại</button>
+          <button class="btn btn-logout" onclick="logout()">Đăng xuất</button>
+        </div>`;
+    }
+
+    // ── API calls ─────────────────────────────────────────────────────────────
+
+    async function loadProfile() {
+      renderLoading();
+
+      try {
+        const res = await fetch(API_ME, {
+          headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+
+        if (res.status === 401) {
+          // Access token hết hạn hoặc không có — thử refresh
+          const refreshed = await tryRefreshToken();
+          if (refreshed) {
+            await loadProfile();
+          } else {
+            clearSession();
+            renderNoSession();
+          }
+          return;
+        }
+
+        // Parse JSON — chỉ sau khi đã xử lý các status không có body
+        let data;
+        try { data = await res.json(); }
+        catch (_) { renderError(`Server trả về response không hợp lệ (HTTP ${res.status})`); return; }
+
+        if (res.ok && data.success) {
+          renderProfile(data.data, getToken());
+        } else {
+          renderError(data.message || 'Không thể lấy thông tin người dùng.');
+        }
+      } catch (err) {
+        renderError('Không thể kết nối đến server: ' + err.message);
+      }
+    }
+
+    async function tryRefreshToken() {
+      console.log('[refresh] Đang gọi /api/auth/refresh...');
+      try {
+        const res  = await fetch(API_REFRESH, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        console.log('[refresh] HTTP status:', res.status);
+
+        let data;
+        try { data = await res.json(); } catch (_) { data = null; }
+        console.log('[refresh] Response body:', data);
+
+        if (res.ok && data?.success && data.data?.accessToken) {
+          console.log('[refresh] Thành công, token mới nhận được');
+          setToken(data.data.accessToken);
+          return true;
+        }
+        console.warn('[refresh] Thất bại:', data?.message ?? '(no message)');
+      } catch (err) {
+        console.error('[refresh] Network error:', err.message);
+      }
+      return false;
+    }
+
+    async function logout() {
+      try {
+        await fetch(API_LOGOUT, {
+          method: 'POST',
+          credentials: 'include',
+          headers: getToken() ? { 'Authorization': `Bearer ${getToken()}` } : {}
+        });
+      } catch (_) {}
+      clearSession();
+      renderNoSession();
+    }
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+    loadProfile();
+  </script>
+</body>
+</html>

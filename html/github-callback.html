@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitHub OAuth — Đang xử lý...</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f1117;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #e2e8f0;
+    }
+
+    .card {
+      background: #1a1d2e;
+      border: 1px solid #2d3148;
+      border-radius: 12px;
+      padding: 40px 48px;
+      text-align: center;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .icon { font-size: 2.5rem; margin-bottom: 16px; }
+
+    h1 { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; }
+
+    p { font-size: 0.88rem; color: #6b7280; line-height: 1.6; }
+
+    .spinner {
+      display: inline-block;
+      width: 32px; height: 32px;
+      border: 3px solid #2d3148;
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-card .icon { font-size: 2rem; }
+    .error-msg {
+      color: #f87171;
+      font-size: 0.85rem;
+      margin-top: 10px;
+      background: #1f1317;
+      border: 1px solid #7f1d1d;
+      border-radius: 8px;
+      padding: 10px 14px;
+      word-break: break-word;
+    }
+
+    .back-btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 9px 20px;
+      background: #1a1d2e;
+      border: 1.5px solid #2d3148;
+      border-radius: 8px;
+      color: #94a3b8;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s;
+    }
+    .back-btn:hover { border-color: #4b5563; color: #e2e8f0; }
+  </style>
+</head>
+<body>
+
+<div class="card" id="card">
+  <div class="spinner"></div>
+  <h1>Đang xác thực với GitHub...</h1>
+  <p>Vui lòng đợi trong giây lát.</p>
+</div>
+
+<script>
+  const BACKEND_URL = 'http://localhost:5000/api/auth/github/callback';
+  const HOME_URL    = 'home.html';
+  const LOGIN_URL   = 'login.html';
+
+  async function handleCallback() {
+    const params = new URLSearchParams(window.location.search);
+    const code      = params.get('code');
+    const state     = params.get('state');
+    const errorParam = params.get('error');
+
+    // ── Xử lý lỗi từ GitHub (user từ chối cấp quyền, v.v.) ──────────────────
+    if (errorParam) {
+      showError('GitHub từ chối xác thực: ' + errorParam);
+      return;
+    }
+
+    if (!code) {
+      showError('Không nhận được authorization code từ GitHub.');
+      return;
+    }
+
+    // ── Kiểm tra CSRF state ──────────────────────────────────────────────────
+    const savedState = sessionStorage.getItem('github_oauth_state');
+    sessionStorage.removeItem('github_oauth_state');
+
+    if (!savedState || savedState !== state) {
+      showError('Xác minh bảo mật thất bại (state mismatch). Vui lòng thử lại.');
+      return;
+    }
+
+    // ── POST code lên Backend ────────────────────────────────────────────────
+    let data;
+    try {
+      const res = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',       // để nhận Set-Cookie refresh token
+        body: JSON.stringify({ code }),
+      });
+      data = await res.json();
+    } catch (err) {
+      showError('Lỗi kết nối đến server: ' + err.message);
+      return;
+    }
+
+    if (!data.success) {
+      showError(data.message ?? 'Đăng nhập thất bại.');
+      return;
+    }
+
+    // ── Lưu access token, chuyển về Home ────────────────────────────────────
+    if (data.data?.accessToken) {
+      sessionStorage.setItem('accessToken', data.data.accessToken);
+    }
+
+    showSuccess();
+    setTimeout(() => { window.location.href = HOME_URL; }, 1500);
+  }
+
+  function showSuccess() {
+    document.getElementById('card').innerHTML = `
+      <div class="icon">✅</div>
+      <h1>Đăng nhập thành công</h1>
+      <p>Đang chuyển hướng về trang chủ...</p>
+    `;
+  }
+
+  function showError(msg) {
+    document.getElementById('card').innerHTML = `
+      <div class="icon">❌</div>
+      <h1>Đăng nhập thất bại</h1>
+      <div class="error-msg">${msg}</div>
+      <a class="back-btn" href="${LOGIN_URL}">← Quay lại đăng nhập</a>
+    `;
+  }
+
+  handleCallback();
+</script>
+
+</body>
+</html>

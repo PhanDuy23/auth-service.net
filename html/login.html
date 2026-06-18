@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — API Tester</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      background: #0f1117;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #e2e8f0;
+    }
+
+    .pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 36px 32px;
+      min-width: 0;
+    }
+
+    .divider {
+      width: 1px;
+      background: #1e2130;
+    }
+
+    h2 {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6b7280;
+      margin-bottom: 16px;
+    }
+
+    .endpoint {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1a1d2e;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 24px;
+      font-size: 0.85rem;
+    }
+
+    .method {
+      background: #059669;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .url {
+      color: #94a3b8;
+      font-family: monospace;
+    }
+
+    .editor-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    textarea {
+      flex: 1;
+      width: 100%;
+      min-height: 200px;
+      background: #1a1d2e;
+      border: 1.5px solid #2d3148;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+      font-size: 0.88rem;
+      line-height: 1.7;
+      padding: 16px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus {
+      border-color: #059669;
+    }
+
+    .json-error {
+      font-size: 0.78rem;
+      color: #f87171;
+      margin-top: 6px;
+      min-height: 18px;
+    }
+
+    button#sendBtn {
+      margin-top: 16px;
+      padding: 11px 28px;
+      background: #059669;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      align-self: flex-start;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    button#sendBtn:hover {
+      background: #047857;
+    }
+
+    button#sendBtn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ── Social buttons ── */
+    .social-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
+      color: #4b5563;
+      font-size: 0.78rem;
+    }
+    .social-divider::before,
+    .social-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #1e2130;
+    }
+
+    .social-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .social-btn {
+      padding: 10px 20px;
+      background: #1a1d2e;
+      color: #e2e8f0;
+      border: 1.5px solid #2d3148;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .social-btn:hover {
+      background: #1e2333;
+      border-color: #4b5563;
+    }
+
+    .social-btn svg {
+      flex-shrink: 0;
+    }
+
+    /* ── Remember me ── */
+    .remember-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .remember-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #059669;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .remember-row label {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .remember-row label span {
+      color: #6b7280;
+      font-size: 0.78rem;
+    }
+
+    /* ── Response pane ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      min-height: 28px;
+    }
+
+    .badge {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .badge.ok {
+      background: #064e3b;
+      color: #6ee7b7;
+    }
+
+    .badge.err {
+      background: #7f1d1d;
+      color: #fca5a5;
+    }
+
+    .badge.idle {
+      background: #1e2130;
+      color: #6b7280;
+    }
+
+    .response-time {
+      font-size: 0.78rem;
+      color: #6b7280;
+    }
+
+    .redirect-notice {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: #064e3b;
+      border: 1px solid #065f46;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      color: #6ee7b7;
+      margin-bottom: 14px;
+    }
+
+    .redirect-notice a {
+      color: #34d399;
+      font-weight: 600;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .fields {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .field {
+      background: #1a1d2e;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+
+    .field-key {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #059669;
+      margin-bottom: 4px;
+    }
+
+    .field-val {
+      font-family: "Fira Code", Consolas, monospace;
+      font-size: 0.88rem;
+      color: #e2e8f0;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    .field-val.null-val {
+      color: #6b7280;
+      font-style: italic;
+    }
+
+    .field-val.true-val {
+      color: #6ee7b7;
+    }
+
+    .field-val.false-val {
+      color: #f87171;
+    }
+
+    .sub-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .sub-field {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 6px;
+      padding: 8px 12px;
+    }
+
+    .sub-field-key {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6366f1;
+      margin-bottom: 3px;
+    }
+
+    .sub-field-val {
+      font-family: "Fira Code", Consolas, monospace;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    .token-val {
+      color: #fbbf24;
+      font-size: 0.75rem;
+    }
+
+    .raw-toggle {
+      margin-top: 16px;
+      font-size: 0.78rem;
+      color: #6b7280;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .raw-toggle:hover {
+      color: #94a3b8;
+    }
+
+    .raw-block {
+      display: none;
+      margin-top: 8px;
+      background: #1a1d2e;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-family: "Fira Code", Consolas, monospace;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #2d3148;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- LEFT: Request -->
+  <div class="pane">
+    <h2>Request</h2>
+
+    <div class="endpoint">
+      <span class="method">POST</span>
+      <span class="url">http://localhost:5000/api/auth/login</span>
+    </div>
+
+    <div class="editor-wrap">
+      <textarea id="jsonInput" spellcheck="false">{
+  "email": "a@example.com",
+  "password": "Password123!",
+  "rememberMe": false
+}</textarea>
+
+      <div class="json-error" id="jsonError"></div>
+    </div>
+
+    <button id="sendBtn" type="button">Send</button>
+
+    <div class="remember-row">
+      <input type="checkbox" id="rememberMe" />
+      <label for="rememberMe">
+        Remember me <span>— persistent cookie, lưu qua lần đóng browser</span>
+      </label>
+    </div>
+
+    <div class="social-divider">hoặc</div>
+
+    <div class="social-buttons">
+      <button id="googleBtn" class="social-btn" type="button">
+        <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.34-8.16 2.34-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          <path fill="none" d="M0 0h48v48H0z"/>
+        </svg>
+        Đăng nhập bằng Google
+      </button>
+
+      <button id="githubBtn" class="social-btn" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#e2e8f0" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 0C5.37 0 0 5.373 0 12c0 5.303 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.807 5.625-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.573C20.565 21.795 24 17.298 24 12c0-6.627-5.373-12-12-12z"/>
+        </svg>
+        Đăng nhập bằng GitHub
+      </button>
+    </div>
+
+  </div><!-- end left pane -->
+
+  <div class="divider"></div>
+
+  <!-- RIGHT: Response -->
+  <div class="pane">
+    <h2>Response</h2>
+
+    <div class="status-bar">
+      <span class="badge idle" id="statusBadge">—</span>
+      <span class="response-time" id="responseTime"></span>
+    </div>
+
+    <div class="redirect-notice" id="redirectNotice">
+      ✓ Đăng nhập thành công —
+      <a onclick="openHome()">Mở trang Home</a>
+      <span id="countdown"></span>
+    </div>
+
+    <div class="fields" id="fields">
+      <div class="field">
+        <div class="field-key">Chờ request...</div>
+        <div class="field-val null-val">Nhấn Send để gửi request</div>
+      </div>
+    </div>
+
+    <div class="raw-toggle" id="rawToggle" style="display:none">▶ Raw JSON</div>
+    <div class="raw-block" id="rawBlock"></div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:5000/api/auth/login';
+    const GOOGLE_LOGIN_URL = 'http://localhost:5000/api/auth/google/login';
+    const HOME_URL = 'home.html';
+
+    // ── GitHub OAuth config ───────────────────────────────────────────────────
+    // Thay bằng Client ID thực tế từ GitHub OAuth App settings
+    const GITHUB_CLIENT_ID    = 'Ov23lin6WGwYoKwvWY6f';
+    const GITHUB_CALLBACK_URL = 'http://localhost:5500/html/github-callback.html';
+
+    const jsonInput = document.getElementById('jsonInput');
+    const jsonError = document.getElementById('jsonError');
+    const sendBtn = document.getElementById('sendBtn');
+    const googleBtn = document.getElementById('googleBtn');
+    const githubBtn = document.getElementById('githubBtn');
+    const rememberMeBox = document.getElementById('rememberMe');
+    const statusBadge = document.getElementById('statusBadge');
+    const responseTime = document.getElementById('responseTime');
+    const fieldsEl = document.getElementById('fields');
+    const rawToggle = document.getElementById('rawToggle');
+    const rawBlock = document.getElementById('rawBlock');
+    const redirectNotice = document.getElementById('redirectNotice');
+    const countdown = document.getElementById('countdown');
+
+    // ── Google OAuth ──────────────────────────────────────────────────────────
+    googleBtn.addEventListener('click', () => {
+      window.location.href = GOOGLE_LOGIN_URL;
+    });
+
+    // ── GitHub OAuth ──────────────────────────────────────────────────────────
+    githubBtn.addEventListener('click', () => {
+      // Sinh random state để chống CSRF
+      const state = crypto.randomUUID();
+      sessionStorage.setItem('github_oauth_state', state);
+
+      const params = new URLSearchParams({
+        client_id:    GITHUB_CLIENT_ID,
+        redirect_uri: GITHUB_CALLBACK_URL,
+        scope:        'user:email',   // cần để lấy email kể cả khi user đặt là private
+        state,
+      });
+
+      window.location.href = 'https://github.com/login/oauth/authorize?' + params.toString();
+    });
+
+    // Khi được redirect về sau Google OAuth, đọc access token từ cookie
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? decodeURIComponent(match[2]) : null;
+    }
+
+    function eraseCookie(name) {
+      document.cookie = name + '=; Max-Age=0; path=/';
+    }
+
+    // Kiểm tra khi trang load — nếu có oauth_access_token cookie thì đã login xong
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const oauthError = params.get('error');
+
+      if (oauthError) {
+        statusBadge.className = 'badge err';
+        statusBadge.textContent = 'Google Error';
+        fieldsEl.innerHTML = `<div class="field">
+          <div class="field-key">error</div>
+          <div class="field-val false-val">${oauthError}</div>
+        </div>`;
+        return;
+      }
+
+      const oauthToken = getCookie('oauth_access_token');
+      if (oauthToken) {
+        // Xóa cookie ngay sau khi đọc
+        eraseCookie('oauth_access_token');
+        sessionStorage.setItem('accessToken', oauthToken);
+
+        statusBadge.className = 'badge ok';
+        statusBadge.textContent = 'Google OK';
+        redirectNotice.style.display = 'flex';
+        startRedirectCountdown();
+      }
+    });
+
+    let countdownTimer = null;
+
+    // ── Sync checkbox ↔ JSON ──────────────────────────────────────────────────
+
+    // checkbox → JSON
+    rememberMeBox.addEventListener('change', () => {
+      try {
+        const obj = JSON.parse(jsonInput.value);
+        obj.rememberMe = rememberMeBox.checked;
+        jsonInput.value = JSON.stringify(obj, null, 2);
+        jsonError.textContent = '';
+      } catch (_) { }
+    });
+
+    // JSON → checkbox + live validation
+    jsonInput.addEventListener('input', () => {
+      try {
+        const obj = JSON.parse(jsonInput.value);
+        jsonError.textContent = '';
+        if (typeof obj.rememberMe === 'boolean')
+          rememberMeBox.checked = obj.rememberMe;
+      } catch (e) { jsonError.textContent = '⚠ ' + e.message; }
+    });
+
+    // ── Raw toggle ────────────────────────────────────────────────────────────
+    rawToggle.addEventListener('click', () => {
+      const open = rawBlock.style.display === 'block';
+      rawBlock.style.display = open ? 'none' : 'block';
+      rawToggle.textContent = (open ? '▶' : '▼') + ' Raw JSON';
+    });
+
+    function openHome() { window.open(HOME_URL, '_blank'); }
+
+    function startRedirectCountdown() {
+      let secs = 3;
+      countdown.textContent = `(tự động sau ${secs}s)`;
+      countdownTimer = setInterval(() => {
+        secs--;
+        if (secs <= 0) {
+          clearInterval(countdownTimer);
+          countdown.textContent = '';
+          openHome();
+        } else {
+          countdown.textContent = `(tự động sau ${secs}s)`;
+        }
+      }, 1000);
+    }
+
+    // ── Render helpers ────────────────────────────────────────────────────────
+    function renderValue(val) {
+      if (val === null || val === undefined) return { html: '<span class="null-val">null</span>', cls: 'null-val' };
+      if (val === true) return { html: '<span class="true-val">true</span>', cls: 'true-val' };
+      if (val === false) return { html: '<span class="false-val">false</span>', cls: 'false-val' };
+      if (Array.isArray(val)) {
+        if (val.length === 0) return { html: '<span class="null-val">[]</span>', cls: 'null-val' };
+        return { html: val.map(v => `• ${v}`).join('\n'), cls: '' };
+      }
+      return { html: String(val), cls: '' };
+    }
+
+    function renderDataField(data) {
+      if (data === null || data === undefined)
+        return `<div class="field-val null-val">null</div>`;
+
+      const order = ['accessToken', 'expiresAt', 'email', 'fullName', 'roles'];
+      const keys = [...new Set([...order, ...Object.keys(data)])];
+
+      const subHtml = keys.map(key => {
+        if (!(key in data)) return '';
+        const val = data[key];
+        let displayVal;
+
+        if (key === 'accessToken') {
+          const full = String(val);
+          const short = full.length > 60 ? full.slice(0, 60) + '…' : full;
+          displayVal = `<div class="sub-field-val token-val" title="${full}">${short}</div>`;
+        } else if (Array.isArray(val)) {
+          displayVal = `<div class="sub-field-val">${val.length ? val.map(v => `• ${v}`).join('\n') : '[]'}</div>`;
+        } else {
+          displayVal = `<div class="sub-field-val">${val}</div>`;
+        }
+
+        return `<div class="sub-field">
+          <div class="sub-field-key">${key}</div>
+          ${displayVal}
+        </div>`;
+      }).join('');
+
+      return `<div class="sub-fields">${subHtml}</div>`;
+    }
+
+    function renderFields(responseData) {
+      const order = ['success', 'statusCode', 'message', 'data', 'errors'];
+      const keys = [...new Set([...order, ...Object.keys(responseData)])];
+
+      fieldsEl.innerHTML = keys.map(key => {
+        if (!(key in responseData)) return '';
+        const val = responseData[key];
+
+        if (key === 'data') {
+          return `<div class="field">
+            <div class="field-key">data</div>
+            ${renderDataField(val)}
+          </div>`;
+        }
+
+        const { html, cls } = renderValue(val);
+        return `<div class="field">
+          <div class="field-key">${key}</div>
+          <div class="field-val ${cls}">${html}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Send ──────────────────────────────────────────────────────────────────
+    sendBtn.addEventListener('click', async () => {
+      let payload;
+      try {
+        payload = JSON.parse(jsonInput.value);
+
+      }
+      catch (e) { jsonError.textContent = '⚠ JSON không hợp lệ: ' + e.message; return; }
+
+      if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+      redirectNotice.style.display = 'none';
+      rawToggle.style.display = 'none';
+      rawBlock.style.display = 'none';
+      fieldsEl.innerHTML = '';
+
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<span class="spinner"></span>Sending...';
+      statusBadge.className = 'badge idle';
+      statusBadge.textContent = '...';
+      responseTime.textContent = '';
+
+      const t0 = performance.now();
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+
+        const elapsed = Math.round(performance.now() - t0);
+        const data = await res.json();
+
+        statusBadge.className = res.ok ? 'badge ok' : 'badge err';
+        statusBadge.textContent = `HTTP ${res.status}`;
+        responseTime.textContent = `${elapsed} ms`;
+
+        renderFields(data);
+        rawBlock.textContent = JSON.stringify(data, null, 2);
+        rawToggle.style.display = 'block';
+        rawToggle.textContent = '▶ Raw JSON';
+
+        if (res.ok && data.success) {
+          // Lưu access token vào sessionStorage để truyền sang home.html
+          // (xóa ngay sau khi home.html đọc — không lưu lâu dài)
+          if (data.data?.accessToken)
+            sessionStorage.setItem('accessToken', data.data.accessToken);
+
+          redirectNotice.style.display = 'flex';
+          startRedirectCountdown();
+        }
+
+      } catch (err) {
+        const elapsed = Math.round(performance.now() - t0);
+        statusBadge.className = 'badge err';
+        statusBadge.textContent = 'Network Error';
+        responseTime.textContent = `${elapsed} ms`;
+        fieldsEl.innerHTML = `<div class="field">
+          <div class="field-key">error</div>
+          <div class="field-val false-val">${err.message}</div>
+        </div>`;
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+      }
+    });
+  </script>
+</body>
+
+</html>

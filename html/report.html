@@ -1,0 +1,2139 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auth Service — Báo cáo kỹ thuật</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 150%;
+    }
+
+    body {
+      background: #f8fafc;
+      color: #1e293b;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 48px 24px 80px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: auto;
+    }
+
+    /* ── Header ── */
+    .report-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .report-header h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #0d9488, #4f46e5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .report-header p {
+      color: #64748b;
+      font-size: 1rem;
+    }
+
+    /* ── TOC ── */
+    .toc {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 48px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    .toc h3 {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 12px;
+    }
+
+    .toc ol {
+      padding-left: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 24px;
+    }
+
+    .toc li {
+      font-size: 0.9rem;
+    }
+
+    .toc a {
+      color: black;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .toc a:hover {
+      color: #0d9488;
+    }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 48px;
+      scroll-margin-top: 24px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .section-num {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #64748b;
+      flex-shrink: 0;
+    }
+
+    .section-title h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .card p,
+    .card li {
+      color: black;
+      font-size: 0.9rem;
+    }
+
+    /* ── Grid ── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 680px) {
+
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .toc ol {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Box ── */
+    .box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .box-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .box-label.green {
+      color: #0d9488;
+    }
+
+    .box-label.blue {
+      color: #2563eb;
+    }
+
+    .box-label.purple {
+      color: #7c3aed;
+    }
+
+    .box-label.yellow {
+      color: #d97706;
+    }
+
+    .box-label.red {
+      color: #dc2626;
+    }
+
+    .box-label.gray {
+      color: #64748b;
+    }
+
+    .box p,
+    .box li {
+      color: #475569;
+      font-size: 0.88rem;
+    }
+
+    .box ul {
+      padding-left: 16px;
+    }
+
+    .box ul li {
+      margin-bottom: 4px;
+    }
+
+    /* ── Compare: before / after ── */
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 680px) {
+      .compare {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .compare-card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .compare-card.bad {
+      border: 1.5px solid #ef4444;
+    }
+
+    .compare-card.good {
+      border: 1.5px solid #22c55e;
+    }
+
+    .compare-card h4 {
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .compare-card.bad h4 {
+      color: #dc2626;
+    }
+
+    .compare-card.good h4 {
+      color: #16a34a;
+    }
+
+    .compare-card p {
+      color: #475569;
+      font-size: 0.85rem;
+    }
+
+    .compare-card ul {
+      padding-left: 16px;
+    }
+
+    .compare-card ul li {
+      color: #475569;
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+    }
+
+    /* ── Code block ── */
+    .code {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      white-space: pre;
+      overflow-x: auto;
+      margin-top: 12px;
+      line-height: 1.7;
+    }
+
+    .code .kw {
+      color: #c084fc;
+    }
+
+    .code .cls {
+      color: #6ee7b7;
+    }
+
+    .code .str {
+      color: #fbbf24;
+    }
+
+    .code .cmt {
+      color: #64748b;
+      font-style: italic;
+    }
+
+    .code .op {
+      color: #f87171;
+    }
+
+    /* ── Flow ── */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 12px 0;
+    }
+
+    .flow-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      position: relative;
+    }
+
+    .flow-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 14px;
+      top: 28px;
+      width: 2px;
+      bottom: 0;
+      background: #cbd5e1;
+    }
+
+    .flow-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      border: 2px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #64748b;
+      flex-shrink: 0;
+      margin-top: 2px;
+      z-index: 1;
+    }
+
+    .flow-dot.ok {
+      border-color: #0d9488;
+      color: #0d9488;
+      background: #f0fdfa;
+    }
+
+    .flow-dot.warn {
+      border-color: #d97706;
+      color: #d97706;
+      background: #fffbeb;
+    }
+
+    .flow-dot.err {
+      border-color: #dc2626;
+      color: #dc2626;
+      background: #fef2f2;
+    }
+
+    .flow-body {
+      padding: 4px 0 16px;
+    }
+
+    .flow-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 2px;
+    }
+
+    .flow-desc {
+      font-size: 0.82rem;
+      color: #64748b;
+    }
+
+    /* ── Table ── */
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th {
+      background: #f1f5f9;
+      color: #64748b;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #475569;
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: #f8fafc;
+    }
+
+    td:first-child {
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .badge.green {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .badge.blue {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge.purple {
+      background: #ede9fe;
+      color: #5b21b6;
+    }
+
+    .badge.yellow {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge.red {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge.gray {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    /* ── Accordion sections ── */
+    .section {
+      margin-bottom: 12px;
+      scroll-margin-top: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px 14px 16px;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s, box-shadow 0.15s;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-header:hover {
+      background: #f8fafc;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .section.open .section-header {
+      border-radius: 12px 12px 0 0;
+      border-bottom-color: transparent;
+      background: #f8fafc;
+    }
+
+    .section-header h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0f172a;
+      flex: 1;
+    }
+
+    .section-chevron {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.25s ease, background 0.15s;
+    }
+
+    .section.open .section-chevron {
+      transform: rotate(180deg);
+      background: #e0f2fe;
+      border-color: #bae6fd;
+    }
+
+    .section-chevron svg {
+      display: block;
+    }
+
+    .section-body {
+      display: none;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      padding: 24px 20px 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .section.open .section-body {
+      display: block;
+    }
+
+    /* Keep original .section-title style for sub-headings inside body */
+    .section-body .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <!-- ═══════════ HEADER ═══════════ -->
+    <header class="report-header">
+      <h1>Auth Service — Báo cáo kỹ thuật</h1>
+      <p>ASP.NET Core · Identity · JWT · 2FA · OAuth (GitHub / Google)</p>
+    </header>
+
+    <!-- ═══════════ MỤC LỤC ═══════════ -->
+    <nav class="toc">
+      <h3>Mục lục</h3>
+      <ol>
+        <li><a href="#s1">Dependency Injection (DI)</a></li>
+        <li><a href="#s2">Async / Await</a></li>
+        <li><a href="#s3">ASP.NET Identity</a></li>
+        <li><a href="#s4">Entity Framework Core</a></li>
+        <li><a href="#s5">Đăng ký (Register)</a></li>
+        <li><a href="#s6">Đăng nhập (Login)</a></li>
+        <li><a href="#s7">Two-Factor Authentication (2FA)</a></li>
+        <li><a href="#s8">Passkey (WebAuthn)</a></li>
+        <li><a href="#s9">Token &amp; Cookie</a></li>
+        <li><a href="#s10">External Login (GitHub / Google)</a></li>
+        <li><a href="#s11">Authorization — Phân quyền</a></li>
+        <li><a href="#s12">Password Management</a></li>
+        <!-- <li><a href="#s13">User Profile</a></li> -->
+      </ol>
+    </nav>
+
+    <!-- ═══════════ 1. DEPENDENCY INJECTION ═══════════ -->
+    <section class="section" id="s1">
+      <div class="section-title">
+        <div class="section-num">01</div>
+        <h2>Dependency Injection (DI)</h2>
+      </div>
+
+      <div class="card">
+        <p>DI là kỹ thuật cung cấp các phụ thuộc từ bên ngoài thay vì để đối tượng tự khởi tạo. ASP.NET Core có
+          container DI tích hợp sẵn.</p>
+      </div>
+
+      <div class="compare">
+        <div class="compare-card bad">
+          <h4>❌ Không dùng DI — Tight Coupling</h4>
+          <div class="code"><span class="kw">private</span> <span class="cls">EmailService</span> _email
+            = <span class="kw">new</span> <span class="cls">EmailService</span>();</div>
+          <ul style="margin-top:10px">
+            <li>Khó thay thế EmailService</li>
+            <li>Không thể mock khi viết Unit Test</li>
+            <li>UserService phụ thuộc trực tiếp vào class cụ thể</li>
+          </ul>
+        </div>
+        <div class="compare-card good">
+          <h4>✅ Dùng DI — Loose Coupling</h4>
+          <div class="code"><span class="kw">private readonly</span> <span class="cls">IEmailService</span> _email;
+
+            <span class="kw">public</span> <span class="cls">AuthService</span>(<span class="cls">IEmailService</span>
+            email)
+            {
+            _email = email;
+            }
+          </div>
+          <ul style="margin-top:10px">
+            <li>Dễ thay bằng MockEmailService khi test</li>
+            <li>Container tự inject — không cần <code>new</code></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <p style="margin-bottom:10px">Trong project này, tất cả service đều được đăng ký ở
+          <strong>ServiceCollectionExtensions.cs</strong>:
+        </p>
+        <div class="code">builder.Services.<span class="cls">AddScoped</span>&lt;<span class="cls">IAuthService</span>,
+          <span class="cls">AuthService</span>&gt;();
+          builder.Services.<span class="cls">AddScoped</span>&lt;<span class="cls">IRegistrationService</span>, <span
+            class="cls">RegistrationService</span>&gt;();
+          builder.Services.<span class="cls">AddScoped</span>&lt;<span class="cls">ITwoFactorService</span>, <span
+            class="cls">TwoFactorService</span>&gt;();
+          builder.Services.<span class="cls">AddScoped</span>&lt;<span class="cls">IPasswordService</span>, <span
+            class="cls">PasswordService</span>&gt;();
+          builder.Services.<span class="cls">AddScoped</span>&lt;<span class="cls">IUserService</span>, <span
+            class="cls">UserService</span>&gt;();
+          builder.Services.<span class="cls">AddScoped</span>&lt;<span class="cls">IAdminService</span>, <span
+            class="cls">AdminService</span>&gt;();
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="box">
+          <div class="box-label green">AddScoped</div>
+          <p>Tạo một instance mới cho mỗi HTTP request. Phù hợp với service cần truy cập DB.</p>
+        </div>
+        <div class="box">
+          <div class="box-label blue">AddSingleton</div>
+          <p>Tạo một instance duy nhất cho toàn bộ ứng dụng. Phù hợp với config, cache.</p>
+        </div>
+        <div class="box">
+          <div class="box-label purple">AddTransient</div>
+          <p>Tạo instance mới mỗi lần inject. Phù hợp với service nhẹ, không có trạng thái.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ 2. ASYNC / AWAIT ═══════════ -->
+    <section class="section" id="s2">
+      <div class="section-title">
+        <div class="section-num">02</div>
+        <h2>Async / Await</h2>
+      </div>
+
+      <div class="card">
+        <p>Cơ chế bất đồng bộ giúp server không bị block thread khi chờ I/O (database, email, API bên ngoài). Toàn bộ
+          service trong project dùng pattern này.</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="box">
+          <div class="box-label green">async</div>
+          <p>Đánh dấu method có thể chứa thao tác bất đồng bộ. Method luôn trả về <code>Task</code> hoặc
+            <code>Task&lt;T&gt;</code>.
+          </p>
+        </div>
+        <div class="box">
+          <div class="box-label yellow">await</div>
+          <p>Tạm dừng execution và nhường thread. Khi tác vụ hoàn tất, method tiếp tục từ điểm đó.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <p style="margin-bottom:10px">Ví dụ thực tế trong <strong>AuthService.cs</strong>:</p>
+        <div class="code"><span class="kw">public async</span> <span class="cls">Task</span>&lt;...&gt; <span
+            class="cls">LoginAsync</span>(<span class="cls">LoginDto</span> dto)
+          {
+          <span class="cmt">// Không block thread khi query DB</span>
+          <span class="kw">var</span> user = <span class="kw">await</span> _userManager.<span
+            class="cls">FindByEmailAsync</span>(dto.Email);
+
+          <span class="cmt">// Không block thread khi check password (hashing)</span>
+          <span class="kw">var</span> valid = <span class="kw">await</span> _userManager.<span
+            class="cls">CheckPasswordAsync</span>(user, dto.Password);
+
+          <span class="cmt">// Không block thread khi ghi DB</span>
+          <span class="kw">await</span> _userManager.<span class="cls">UpdateAsync</span>(user);
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ 3. ASP.NET IDENTITY ═══════════ -->
+    <section class="section" id="s3">
+      <div class="section-title">
+        <div class="section-num">03</div>
+        <h2>ASP.NET Identity</h2>
+      </div>
+
+      <div class="card">
+        <p>Framework quản lý Authentication và Authorization tích hợp sẵn trong ASP.NET Core. Project mở rộng
+          <code>IdentityUser</code> thành <code>ApplicationUser</code> với các field bổ sung.
+        </p>
+        <div class="code"><span class="kw">public class</span> <span class="cls">ApplicationUser</span> : <span
+            class="cls">IdentityUser</span>
+          {
+          <span class="kw">public string</span>? FullName { <span class="kw">get</span>; <span class="kw">set</span>; }
+          <span class="kw">public string</span>? Avatar { <span class="kw">get</span>; <span class="kw">set</span>; }
+          <span class="kw">public</span> <span class="cls">DateOnly</span>? DateOfBirth { <span class="kw">get</span>;
+          <span class="kw">set</span>; }
+          <span class="kw">public string</span>? Department { <span class="kw">get</span>; <span class="kw">set</span>;
+          }
+          <span class="kw">public</span> <span class="cls">DateTime</span> CreatedAt { <span class="kw">get</span>;
+          <span class="kw">set</span>; }
+          <span class="kw">public</span> <span class="cls">DateTime</span>? LastLoginAt { <span class="kw">get</span>;
+          <span class="kw">set</span>; }
+          <span class="kw">public bool</span> IsActive { <span class="kw">get</span>; <span class="kw">set</span>; } =
+          <span class="kw">true</span>;
+          <span class="kw">public string</span>? TwoFactorSecretKey { <span class="kw">get</span>; <span
+            class="kw">set</span>; } <span class="cmt">// TOTP secret (Base32)</span>
+          }
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="box">
+          <div class="box-label blue">Bảng DB do Identity tạo</div>
+          <ul>
+            <li>AspNetUsers</li>
+            <li>AspNetRoles</li>
+            <li>AspNetUserRoles</li>
+            <li>AspNetUserClaims</li>
+            <li>AspNetRoleClaims</li>
+            <li>AspNetUserTokens</li>
+            <li>AspNetUserLogins <span class="badge gray">GitHub / Google</span></li>
+          </ul>
+        </div>
+        <div class="box">
+          <div class="box-label green">Chức năng sẵn có</div>
+          <ul>
+            <li>Password Hashing (PBKDF2)</li>
+            <li>Email Confirmation Token</li>
+            <li>Password Reset Token</li>
+            <li>Lockout (sai mật khẩu nhiều lần)</li>
+            <li>Roles &amp; Claims</li>
+            <li>External Login (OAuth)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ 4. ENTITY FRAMEWORK CORE ═══════════ -->
+    <section class="section" id="s4">
+      <div class="section-title">
+        <div class="section-num">04</div>
+        <h2>Entity Framework Core</h2>
+      </div>
+
+      <div class="card">
+        <p>ORM của Microsoft cho .NET. Project dùng EF Core + PostgreSQL, quản lý schema qua Migrations.</p>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="box">
+          <div class="box-label blue">DbContext</div>
+          <p><code>ApplicationDbContext</code> kế thừa <code>IdentityDbContext</code>, thêm
+            <code>DbSet&lt;RefreshToken&gt;</code> và <code>DbSet&lt;RecoveryCode&gt;</code>.
+          </p>
+        </div>
+        <div class="box">
+          <div class="box-label green">Fluent API</div>
+          <p>Cấu hình mô hình dữ liệu bằng code, Ví dụ:
+            <code>
+modelBuilder.Entity&lt;User&gt;()
+    .HasKey(u =&gt; u.Id);
+</code>
+          </p>
+        </div>
+        <div class="box">
+          <div class="box-label green">LINQ Query</div>
+          <p>Viết truy vấn bằng C# — EF Core dịch sang SQL. Ví dụ:
+            <code>_db.RefreshTokens.Include(t =&gt; t.User).FirstOrDefaultAsync(...)</code>
+          </p>
+        </div>
+        <div class="box">
+          <div class="box-label purple">Migration</div>
+          <p>Mỗi thay đổi model tạo một migration file. Project có 6 migrations từ InitialCreate đến
+            AddUserProfileFields.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <p style="margin-bottom:8px">Ví dụ query trong <strong>AuthService.cs</strong> — refresh token với Include:</p>
+        <div class="code"><span class="kw">var</span> stored = <span class="kw">await</span> _db.RefreshTokens
+          .<span class="cls">Include</span>(t => t.User)
+          .<span class="cls">FirstOrDefaultAsync</span>(t => t.TokenHash == tokenHash);</div>
+      </div>
+    </section>
+
+    <!-- ═══════════ 5. ĐĂNG KÝ ═══════════ -->
+    <section class="section" id="s5">
+      <div class="section-title">
+        <div class="section-num">05</div>
+        <h2>Đăng ký (Register)</h2>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <p>Endpoint: <span class="badge blue">POST</span> <code>/api/auth/register</code> — Xử lý bởi
+          <code>RegistrationService</code>
+        </p>
+        <div class="tag-row">
+          <span class="badge gray">Role: Customer | Employee | Admin</span>
+          <span class="badge green">Email Confirmation</span>
+          <span class="badge red">Rollback nếu gửi mail thất bại</span>
+        </div>
+      </div>
+
+      <div class="flow">
+        <div class="flow-item">
+          <div class="flow-dot ok">1</div>
+          <div class="flow-body">
+            <div class="flow-title">Validate request</div>
+            <div class="flow-desc">Kiểm tra role hợp lệ (Customer / Employee / Admin). Kiểm tra email chưa tồn tại trong
+              DB.</div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-dot ok">2</div>
+          <div class="flow-body">
+            <div class="flow-title">Tạo ApplicationUser</div>
+            <div class="flow-desc"><code>_userManager.CreateAsync(user, dto.Password)</code> — Identity tự hash password
+              bằng PBKDF2.</div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-dot ok">3</div>
+          <div class="flow-body">
+            <div class="flow-title">Gán Role</div>
+            <div class="flow-desc"><code>_userManager.AddToRoleAsync(user, role)</code>. Nếu thất bại → <span
+                class="badge red">DeleteAsync(user)</span> để rollback.</div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-dot ok">4</div>
+          <div class="flow-body">
+            <div class="flow-title">Gửi email xác nhận</div>
+            <div class="flow-desc">Tạo token bằng <code>GenerateEmailConfirmationTokenAsync</code>. URL:
+              <code>/confirm-email?userId=...&amp;token=...</code>. Timeout 5 giây.
+            </div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-dot warn">!</div>
+          <div class="flow-body">
+            <div class="flow-title">Gửi mail thất bại → Rollback</div>
+            <div class="flow-desc"><code>_userManager.DeleteAsync(user)</code> — tránh tạo tài khoản không thể xác thực
+              email.</div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-dot ok">5</div>
+          <div class="flow-body">
+            <div class="flow-title">Xác nhận email</div>
+            <div class="flow-desc">Endpoint: <span class="badge blue">POST</span> <code>/api/auth/confirm-email</code> —
+              <code>ConfirmEmailAsync(userId, token)</code>. Sau khi confirm, tài khoản mới được phép login.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ 6. ĐĂNG NHẬP ═══════════ -->
+    <section class="section" id="s6">
+      <div class="section-title">
+        <div class="section-num">06</div>
+        <h2>Đăng nhập (Login)</h2>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <p>Endpoint: <span class="badge green">POST</span> <code>/api/auth/login</code> — Xử lý bởi
+          <code>AuthService.LoginAsync</code>
+        </p>
+      </div>
+
+      <div class="flow">
+        <div class="flow-item">
+          <div class="flow-dot ok">1</div>
+          <div class="flow-body">
+            <div class="flow-title">Tìm user theo email</div>
+            <div class="flow-desc">Nếu không tìm thấy hoặc <code>IsActive = false</code> → trả <span
+                class="badge red">401</span> "Email hoặc mật khẩu không đúng" (không tiết lộ tài khoản có tồn tại).
+            </div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-dot warn">2</div>
+          <div class="flow-body">
+            <div class="flow-title">Kiểm tra Lockout</div>
+            <div class="flow-desc">Nếu đang bị khóa → trả <span class="badge red">423</span> kèm số phút còn lại.
+              Identity tự động tăng <code>AccessFailedCount</code> mỗi lần sai mật khẩu.</div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-dot ok">3</div>
+          <div class="flow-body">
+            <div class="flow-title">Kiểm tra mật khẩu</div>
+            <div class="flow-desc"><code>CheckPasswordAsync</code> — hash và so sánh. Sai →
+              <code>AccessFailedAsync</code>. Nếu vượt ngưỡng → auto lockout.
+            </div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-dot ok">4</div>
+          <div class="flow-body">
+            <div class="flow-title">Kiểm tra email đã xác nhận</div>
+            <div class="flow-desc">Nếu chưa confirm email → trả <span class="badge red">400</span>. Reset
+              <code>AccessFailedCount</code> sau khi mật khẩu đúng.
+            </div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-dot warn">5a</div>
+          <div class="flow-body">
+            <div class="flow-title">Có bật 2FA → Pending Token</div>
+            <div class="flow-desc">Tạo <code>pendingToken</code>, set vào <strong>HttpOnly cookie</strong>. Response trả
+              <code>requiresTwoFactor: true</code>. Client phải gọi tiếp <code>POST /api/auth/2fa/verify</code>.
+            </div>
+          </div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-dot ok">5b</div>
+          <div class="flow-body">
+            <div class="flow-title">Không có 2FA → Cấp token</div>
+            <div class="flow-desc">Sinh <strong>Access Token</strong> (JWT, 30 phút) và <strong>Refresh Token</strong>
+              (24 giờ). Refresh token lưu cookie <code>HttpOnly; Secure; SameSite=Strict</code>.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-3" style="margin-top:16px">
+        <div class="box">
+          <div class="box-label yellow">Access Token (JWT)</div>
+          <p>Chứa <code>userId</code>, <code>email</code>, <code>roles</code>. Hạn: <strong>30 phút</strong>. Gửi kèm
+            mỗi request qua <code>Authorization: Bearer ...</code></p>
+        </div>
+        <div class="box">
+          <div class="box-label green">Refresh Token</div>
+          <p>Chuỗi ngẫu nhiên, hash SHA-256 lưu DB. Hạn: <strong>24 giờ</strong>. Lưu trong HttpOnly cookie — JavaScript
+            không đọc được.</p>
+        </div>
+        <div class="box">
+          <div class="box-label blue">Remember Me</div>
+          <p>Nếu <code>rememberMe: true</code> → cookie có <code>Expires</code> cụ thể. Nếu false → session cookie, mất
+            khi đóng browser.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ 7. 2FA ═══════════ -->
+    <section class="section" id="s7">
+      <div class="section-title">
+        <div class="section-num">07</div>
+        <h2>Two-Factor Authentication (2FA)</h2>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <p>Dùng chuẩn TOTP (RFC 6238) — tương thích Google Authenticator, Microsoft Authenticator. Secret key 160-bit,
+          mã OTP 6 chữ số, chu kỳ 30 giây.</p>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="card">
+          <p style="font-weight:600; margin-bottom:12px">🔧 Bật 2FA</p>
+          <div class="flow">
+            <div class="flow-item">
+              <div class="flow-dot ok">1</div>
+              <div class="flow-body">
+                <div class="flow-title">GET /api/auth/2fa/setup</div>
+                <div class="flow-desc">Tạo secret key tạm (Base32) + QR URI. Chưa lưu DB.</div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">2</div>
+              <div class="flow-body">
+                <div class="flow-title">Quét QR vào Authenticator app</div>
+                <div class="flow-desc">App sinh mã OTP 6 chữ số mỗi 30 giây.</div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">3</div>
+              <div class="flow-body">
+                <div class="flow-title">POST /api/auth/2fa/enable</div>
+                <div class="flow-desc">Gửi <code>secretKey + code</code>. Server xác minh OTP → lưu secret vào DB, bật
+                  <code>TwoFactorEnabled = true</code>.
+                </div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">4</div>
+              <div class="flow-body">
+                <div class="flow-title">Nhận 8 Recovery Codes</div>
+                <div class="flow-desc">Chỉ hiển thị <strong>một lần duy nhất</strong>. Dùng khi mất thiết bị xác thực.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <p style="font-weight:600; margin-bottom:12px">🔐 Đăng nhập với 2FA bật</p>
+          <div class="flow">
+            <div class="flow-item">
+              <div class="flow-dot ok">1</div>
+              <div class="flow-body">
+                <div class="flow-title">POST /api/auth/login</div>
+                <div class="flow-desc">Mật khẩu đúng → server set <strong>Pending Token</strong> vào HttpOnly cookie,
+                  trả <code>requiresTwoFactor: true</code>.</div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">2</div>
+              <div class="flow-body">
+                <div class="flow-title">POST /api/auth/2fa/verify</div>
+                <div class="flow-desc">Gửi mã OTP 6 chữ số. Server đọc pending token từ cookie, verify TOTP (window ±1
+                  step).</div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">✓</div>
+              <div class="flow-body">
+                <div class="flow-title">Nhận Access Token + Refresh Token</div>
+                <div class="flow-desc">Pending token bị xóa sau khi dùng. Refresh token cookie được set.</div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot warn">R</div>
+              <div class="flow-body">
+                <div class="flow-title">Dùng Recovery Code</div>
+                <div class="flow-desc">POST /api/auth/2fa/verify-recovery. Sau khi dùng → 2FA tự động
+                  <strong>tắt</strong>, cần cấu hình lại.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p style="font-weight:600; margin-bottom:4px">⚠️ Recovery Code — hành vi đặc biệt</p>
+        <p style="color:#475569; font-size:0.88rem">Sau khi dùng recovery code thành công:
+          <code>TwoFactorEnabled = false</code>, secret key bị xóa, tất cả recovery codes còn lại bị revoke. Response có
+          cờ <code>requiresTwoFactorReconfiguration: true</code> để frontend nhắc người dùng bật lại 2FA.
+        </p>
+      </div>
+    </section>
+
+    <!-- ═══════════ 8. PASSKEY ═══════════ -->
+    <section class="section" id="s8">
+      <div class="section-title">
+        <div class="section-num">08</div>
+        <h2>Passkey — Xác thực thế hệ mới</h2>
+      </div>
+
+      <!-- Hero banner -->
+      <div style="
+      border-radius: 16px;
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e3a5f 100%);
+      padding: 32px 28px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    ">
+        <!-- bg decoration -->
+        <div
+          style="position:absolute;right:-20px;top:-20px;width:180px;height:180px;border-radius:50%;background:rgba(99,102,241,0.2);pointer-events:none;">
+        </div>
+        <div
+          style="position:absolute;right:60px;bottom:-30px;width:120px;height:120px;border-radius:50%;background:rgba(167,139,250,0.15);pointer-events:none;">
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <span style="font-size:2.2rem;line-height:1;">🔑</span>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="
+              background: linear-gradient(90deg,#6366f1,#a78bfa);
+              color:#fff; font-size:0.65rem; font-weight:800;
+              letter-spacing:0.12em; text-transform:uppercase;
+              padding:3px 10px; border-radius:20px;
+            ">WebAuthn / FIDO2</span>
+              <span style="
+              background:rgba(255,255,255,0.15); color:#c7d2fe;
+              font-size:0.65rem; font-weight:700;
+              letter-spacing:0.1em; text-transform:uppercase;
+              padding:3px 10px; border-radius:20px;
+            ">W3C Standard</span>
+            </div>
+            <p style="color:#e0e7ff;font-size:1.15rem;font-weight:700;margin-top:6px;line-height:1.3;">
+              Không mật khẩu. Không OTP. Chỉ cần vân tay hoặc Face ID.
+            </p>
+          </div>
+        </div>
+        <p style="color:#c7d2fe;font-size:0.92rem;line-height:1.6;max-width:680px;">
+          Passkey là phương thức xác thực dựa trên <strong style="color:#fff;">mật mã khóa công khai (asymmetric
+            cryptography)</strong>.
+          Thay vì gõ mật khẩu, thiết bị của người dùng tạo một cặp khóa — private key lưu an toàn trên thiết bị,
+          public key gửi lên server. Khi đăng nhập, thiết bị ký một challenge bằng private key;
+          server xác minh bằng public key. <strong style="color:#fff;">Private key không bao giờ rời khỏi thiết
+            bị.</strong>
+        </p>
+      </div>
+
+      <!-- So sánh với các phương thức cũ -->
+      <div class="grid-3" style="margin-bottom:20px;">
+        <div class="box" style="border-color:#fca5a5;background:#fff;">
+          <div class="box-label red" style="font-size:0.75rem;">❌ Password</div>
+          <ul style="padding-left:16px;margin-top:6px;">
+            <li style="color:#475569;font-size:0.88rem;margin-bottom:5px;">Dễ bị đánh cắp qua phishing</li>
+            <li style="color:#475569;font-size:0.88rem;margin-bottom:5px;">Dễ bị brute-force</li>
+            <li style="color:#475569;font-size:0.88rem;margin-bottom:5px;">Người dùng hay đặt yếu hoặc tái dùng</li>
+            <li style="color:#475569;font-size:0.88rem;">Server phải lưu hash — rủi ro nếu DB bị lộ</li>
+          </ul>
+        </div>
+        <div class="box" style="border-color:#fde68a;background:#fff;">
+          <div class="box-label yellow" style="font-size:0.75rem;">⚠️ Password + 2FA (TOTP)</div>
+          <ul style="padding-left:16px;margin-top:6px;">
+            <li style="color:#475569;font-size:0.88rem;margin-bottom:5px;">Tốt hơn, nhưng vẫn có mật khẩu</li>
+            <li style="color:#475569;font-size:0.88rem;margin-bottom:5px;">OTP có thể bị đánh cắp realtime qua AiTM
+              attack</li>
+            <li style="color:#475569;font-size:0.88rem;margin-bottom:5px;">Người dùng cần cài thêm app</li>
+            <li style="color:#475569;font-size:0.88rem;">Project hiện tại đang ở mức này</li>
+          </ul>
+        </div>
+        <div class="box" style="border-color:#6ee7b7;background:#f0fdf4;">
+          <div class="box-label green" style="font-size:0.75rem;">✅ Passkey</div>
+          <ul style="padding-left:16px;margin-top:6px;">
+            <li style="color:#374151;font-size:0.88rem;margin-bottom:5px;"><strong>Phishing-resistant</strong> — không
+              có gì để đánh cắp</li>
+            <li style="color:#374151;font-size:0.88rem;margin-bottom:5px;">Không cần nhớ mật khẩu</li>
+            <li style="color:#374151;font-size:0.88rem;margin-bottom:5px;">Xác thực bằng biometrics / PIN thiết bị</li>
+            <li style="color:#374151;font-size:0.88rem;">Tích hợp sẵn trên iOS, Android, Windows Hello</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Luồng hoạt động -->
+      <div class="grid-2" style="margin-bottom:20px;">
+        <div class="card">
+          <p style="font-weight:700;margin-bottom:14px;color:#0f172a;">📋 Luồng đăng ký Passkey</p>
+          <div class="flow">
+            <div class="flow-item">
+              <div class="flow-dot ok">1</div>
+              <div class="flow-body">
+                <div class="flow-title">Server tạo Registration Challenge</div>
+                <div class="flow-desc">Trả về <code>challenge</code> (random bytes), <code>rpId</code> (domain),
+                  <code>userId</code>. Challenge có thời hạn ngắn, dùng một lần.
+                </div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">2</div>
+              <div class="flow-body">
+                <div class="flow-title">Browser gọi <code>navigator.credentials.create()</code></div>
+                <div class="flow-desc">OS hiện dialog xác nhận bằng vân tay / Face ID / PIN. Thiết bị tạo cặp khóa
+                  public/private.</div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">3</div>
+              <div class="flow-body">
+                <div class="flow-title">Gửi public key + attestation lên server</div>
+                <div class="flow-desc">Server xác minh attestation, lưu <code>credentialId</code> và
+                  <code>publicKey</code> vào DB. Private key <strong>không rời thiết bị</strong>.
+                </div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">✓</div>
+              <div class="flow-body">
+                <div class="flow-title">Passkey đã đăng ký thành công</div>
+                <div class="flow-desc">Lần sau đăng nhập không cần mật khẩu.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <p style="font-weight:700;margin-bottom:14px;color:#0f172a;">🔐 Luồng đăng nhập bằng Passkey</p>
+          <div class="flow">
+            <div class="flow-item">
+              <div class="flow-dot ok">1</div>
+              <div class="flow-body">
+                <div class="flow-title">Server tạo Authentication Challenge</div>
+                <div class="flow-desc">Trả về <code>challenge</code> mới và danh sách <code>allowedCredentials</code>
+                  của user.</div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">2</div>
+              <div class="flow-body">
+                <div class="flow-title">Browser gọi <code>navigator.credentials.get()</code></div>
+                <div class="flow-desc">OS xác thực người dùng qua biometrics. Thiết bị <strong>ký challenge</strong>
+                  bằng private key.</div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">3</div>
+              <div class="flow-body">
+                <div class="flow-title">Gửi signature lên server</div>
+                <div class="flow-desc">Server tra <code>credentialId</code>, lấy public key từ DB, xác minh chữ ký. Đúng
+                  → đăng nhập thành công.</div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">✓</div>
+              <div class="flow-body">
+                <div class="flow-title">Cấp Access Token + Refresh Token</div>
+                <div class="flow-desc">Tương tự flow login thông thường — cùng cơ chế JWT/cookie.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tại sao phishing-resistant -->
+      <div style="
+      border-radius: 12px;
+      border: 1.5px solid #818cf8;
+      background: linear-gradient(135deg, #f5f3ff, #eff6ff);
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    ">
+        <p style="font-weight:700;color:#3730a3;margin-bottom:12px;font-size:1rem;">🛡️ Tại sao Passkey chống phishing
+          hoàn toàn?</p>
+        <div class="grid-2">
+          <div>
+            <p style="font-size:0.88rem;color:#374151;line-height:1.7;">
+              Khi tạo passkey, <code>rpId</code> (domain của website) được <strong>gắn vào credential</strong>.
+              Khi đăng nhập, thiết bị tự kiểm tra domain hiện tại có khớp với <code>rpId</code> không.
+            </p>
+            <p style="font-size:0.88rem;color:#374151;line-height:1.7;margin-top:8px;">
+              Nếu user bị lừa vào <code>fake-bank.com</code> thay vì <code>bank.com</code> —
+              thiết bị <strong>từ chối ký</strong> vì domain không khớp. Không có credential nào được gửi đi.
+            </p>
+          </div>
+          <div>
+            <div class="box" style="background:#fff;border-color:#c7d2fe;">
+              <div class="box-label purple">So sánh với TOTP</div>
+              <p style="font-size:0.85rem;color:#475569;margin-top:4px;">TOTP (Google Authenticator) vẫn có thể bị đánh
+                cắp realtime — attacker dựng trang giả, lấy OTP ngay khi user nhập và dùng lại trong vài giây. Passkey
+                không có thông tin nào để đánh cắp.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hỗ trợ & triển khai ASP.NET -->
+      <div class="grid-2">
+        <div class="box" style="background:#fff;">
+          <div class="box-label blue">Triển khai trong ASP.NET Core</div>
+          <ul style="padding-left:16px;margin-top:8px;">
+            <li style="color:#475569;font-size:0.88rem;margin-bottom:5px;">Thư viện phổ biến: <code>Fido2NetLib</code>
+            </li>
+            <li style="color:#475569;font-size:0.88rem;margin-bottom:5px;">Lưu <code>credentialId</code>,
+              <code>publicKey</code>, <code>signCount</code> vào DB
+            </li>
+            <li style="color:#475569;font-size:0.88rem;margin-bottom:5px;">2 endpoint:
+              <code>POST /passkey/register</code> và <code>POST /passkey/login</code>
+            </li>
+            <li style="color:#475569;font-size:0.88rem;">Có thể kết hợp với Identity: một user có nhiều passkeys</li>
+          </ul>
+        </div>
+        <div class="box" style="background:#fff;">
+          <div class="box-label green">Hỗ trợ trình duyệt & nền tảng</div>
+          <div class="tag-row" style="margin-top:8px;">
+            <span class="badge blue">Chrome 108+</span>
+            <span class="badge blue">Safari 16+</span>
+            <span class="badge blue">Firefox 122+</span>
+            <span class="badge green">iOS 16+</span>
+            <span class="badge green">Android 9+</span>
+            <span class="badge purple">Windows Hello</span>
+            <span class="badge gray">iCloud Keychain</span>
+            <span class="badge gray">Google Password Manager</span>
+          </div>
+          <p style="font-size:0.82rem;color:#475569;margin-top:10px;">Passkey được đồng bộ qua cloud (iCloud / Google) —
+            mất điện thoại không mất passkey.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ 9. TOKEN & COOKIE ═══════════ -->
+    <section class="section" id="s9">
+      <div class="section-title">
+        <div class="section-num">09</div>
+        <h2>Token &amp; Cookie</h2>
+      </div>
+
+      <!-- Câu hỏi 1: Tại sao chọn JWT? -->
+      <details style="margin-bottom:14px;" class="qa-block">
+        <summary style="
+        list-style:none; border-radius:14px;
+        background:linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%);
+        border:2px solid #bfdbfe; padding:18px 24px; cursor:pointer;
+        position:relative; overflow:hidden;
+        display:flex; align-items:center; gap:14px; user-select:none;
+      ">
+          <div
+            style="position:absolute;right:64px;top:50%;transform:translateY(-50%);font-size:4.5rem;font-weight:900;color:#bfdbfe;line-height:1;pointer-events:none;">
+            ?</div>
+          <div
+            style="background:#2563eb;color:#fff;font-size:0.65rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;padding:3px 10px;border-radius:20px;flex-shrink:0;">
+            Câu hỏi</div>
+          <p style="font-size:1rem;font-weight:700;color:#1e3a5f;line-height:1.4;margin:0;flex:1;">Tại sao chọn JWT thay
+            vì Session truyền thống?</p>
+          <div class="qa-chevron"
+            style="flex-shrink:0;width:30px;height:30px;background:#2563eb;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform 0.25s ease;">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path d="M2 4.5L6.5 9L11 4.5" stroke="white" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </div>
+        </summary>
+        <div
+          style="border:2px solid #bfdbfe;border-top:none;border-radius:0 0 14px 14px;background:#fff;padding:22px 24px;">
+          <div class="compare" style="margin-bottom:14px;">
+            <div style="background:#fef2f2;border:1.5px solid #fca5a5;border-radius:10px;padding:16px 18px;">
+              <p style="font-weight:700;color:#dc2626;margin-bottom:10px;">🗄️ Session truyền thống</p>
+              <ul style="padding-left:18px;display:flex;flex-direction:column;gap:6px;">
+                <li style="color:#374151;font-size:0.9rem;">Server phải <strong>lưu session</strong> trong memory /
+                  Redis cho mỗi user</li>
+                <li style="color:#374151;font-size:0.9rem;"><strong>Không scale ngang</strong> dễ — request phải đến
+                  đúng server giữ session</li>
+                <li style="color:#374151;font-size:0.9rem;">Phù hợp monolith, khó dùng cho microservices hay mobile API
+                </li>
+                <li style="color:#374151;font-size:0.9rem;">Cần sticky session hoặc session store dùng chung (Redis)
+                </li>
+              </ul>
+            </div>
+            <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:16px 18px;">
+              <p style="font-weight:700;color:#15803d;margin-bottom:10px;">🎫 JWT (Stateless)</p>
+              <ul style="padding-left:18px;display:flex;flex-direction:column;gap:6px;">
+                <li style="color:#374151;font-size:0.9rem;"><strong>Server không lưu gì</strong> — mọi thông tin trong
+                  token, verify bằng chữ ký</li>
+                <li style="color:#374151;font-size:0.9rem;"><strong>Scale ngang tự do</strong> — bất kỳ instance nào
+                  cũng xác minh được</li>
+                <li style="color:#374151;font-size:0.9rem;">Phù hợp REST API, microservices, mobile, SPA</li>
+                <li style="color:#374151;font-size:0.9rem;">Payload chứa sẵn claims — không cần query DB mỗi request
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px 16px;">
+            <p style="font-size:0.88rem;color:#92400e;">
+              <strong>Đánh đổi:</strong> JWT không thể thu hồi ngay lập tức trước khi hết hạn (vì stateless). Project
+              giải quyết bằng cách giữ <strong>Access Token ngắn hạn (30 phút)</strong> và dùng Refresh Token lưu DB để
+              có thể revoke khi cần.
+            </p>
+          </div>
+        </div>
+      </details>
+
+      <!-- Câu hỏi 2: Nguyên tắc set thời hạn -->
+      <details style="margin-bottom:20px;" class="qa-block">
+        <summary style="
+        list-style:none; border-radius:14px;
+        background:linear-gradient(135deg,#fdf4ff 0%,#eff6ff 100%);
+        border:2px solid #e9d5ff; padding:18px 24px; cursor:pointer;
+        position:relative; overflow:hidden;
+        display:flex; align-items:center; gap:14px; user-select:none;
+      ">
+          <div
+            style="position:absolute;right:64px;top:50%;transform:translateY(-50%);font-size:4.5rem;font-weight:900;color:#e9d5ff;line-height:1;pointer-events:none;">
+            ?</div>
+          <div
+            style="background:#7c3aed;color:#fff;font-size:0.65rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;padding:3px 10px;border-radius:20px;flex-shrink:0;">
+            Câu hỏi</div>
+          <p style="font-size:1rem;font-weight:700;color:#3b0764;line-height:1.4;margin:0;flex:1;">Nguyên tắc set thời
+            hạn cho mỗi loại token?</p>
+          <div class="qa-chevron"
+            style="flex-shrink:0;width:30px;height:30px;background:#7c3aed;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform 0.25s ease;">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+              <path d="M2 4.5L6.5 9L11 4.5" stroke="white" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </div>
+        </summary>
+        <div
+          style="border:2px solid #e9d5ff;border-top:none;border-radius:0 0 14px 14px;background:#fff;padding:22px 24px;">
+          <p style="font-size:0.9rem;color:#475569;margin-bottom:16px;line-height:1.6;">Thời hạn token là cân bằng giữa
+            <strong>bảo mật</strong> (token ngắn → ít rủi ro nếu bị lộ) và <strong>UX</strong> (token dài → ít phải
+            login lại). Không có con số tuyệt đối — tuỳ ngữ cảnh ứng dụng.
+          </p>
+
+          <div class="grid-3" style="margin-bottom:16px;">
+            <div style="background:#fff;border:1.5px solid #fde68a;border-radius:10px;padding:16px;">
+              <div
+                style="font-size:0.68rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#d97706;margin-bottom:8px;">
+                Access Token — 30 phút</div>
+              <ul style="padding-left:16px;display:flex;flex-direction:column;gap:6px;">
+                <li style="color:#374151;font-size:0.88rem;">Stateless → <strong>không thu hồi được</strong></li>
+                <li style="color:#374151;font-size:0.88rem;">Nếu bị đánh cắp, thiệt hại giới hạn trong 30 phút</li>
+                <li style="color:#374151;font-size:0.88rem;">Ngắn hơn (5–15 phút) nếu ứng dụng tài chính, y tế</li>
+                <li style="color:#374151;font-size:0.88rem;">Dài hơn (1–2 giờ) nếu internal tool ít nhạy cảm</li>
+              </ul>
+            </div>
+            <div style="background:#fff;border:1.5px solid #6ee7b7;border-radius:10px;padding:16px;">
+              <div
+                style="font-size:0.68rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#0d9488;margin-bottom:8px;">
+                Refresh Token — 24 giờ</div>
+              <ul style="padding-left:16px;display:flex;flex-direction:column;gap:6px;">
+                <li style="color:#374151;font-size:0.88rem;">Lưu DB → <strong>có thể revoke ngay</strong></li>
+                <li style="color:#374151;font-size:0.88rem;">Luân chuyển mỗi lần dùng (Refresh Token Rotation)</li>
+                <li style="color:#374151;font-size:0.88rem;">7–30 ngày nếu có "Remember Me"</li>
+                <li style="color:#374151;font-size:0.88rem;">Lưu HttpOnly cookie — JS không đọc được</li>
+              </ul>
+            </div>
+            <div style="background:#fff;border:1.5px solid #c4b5fd;border-radius:10px;padding:16px;">
+              <div
+                style="font-size:0.68rem;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#7c3aed;margin-bottom:8px;">
+                Pending / Special Tokens</div>
+              <ul style="padding-left:16px;display:flex;flex-direction:column;gap:6px;">
+                <li style="color:#374151;font-size:0.88rem;"><strong>2FA Pending</strong>: 5–10 phút — chỉ dùng 1 lần
+                </li>
+                <li style="color:#374151;font-size:0.88rem;"><strong>Email confirm</strong>: 24 giờ — user có thời gian
+                  mở mail</li>
+                <li style="color:#374151;font-size:0.88rem;"><strong>Reset password</strong>: 15–60 phút — nhạy cảm, nên
+                  ngắn</li>
+                <li style="color:#374151;font-size:0.88rem;"><strong>OAuth state</strong>: vài phút — chỉ dùng 1 lần
+                  chống CSRF</li>
+              </ul>
+            </div>
+          </div>
+
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 16px;">
+            <p style="font-size:0.85rem;color:#374151;font-weight:600;margin-bottom:8px;">Quy tắc thực tế:</p>
+            <div class="grid-2">
+              <div>
+                <p style="font-size:0.85rem;color:#475569;line-height:1.6;"><strong>Token càng khó revoke → càng nên
+                    ngắn.</strong> Access Token stateless không revoke được → 30 phút. Refresh Token có DB → có thể dài
+                  hơn nhưng phải rotation.</p>
+              </div>
+              <div>
+                <p style="font-size:0.85rem;color:#475569;line-height:1.6;"><strong>Token dùng 1 lần → hết hạn ngay sau
+                    khi dùng.</strong> Pending 2FA, reset password không bao giờ được dùng lại dù chưa hết hạn thời
+                  gian.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Loại</th>
+              <th>Nội dung</th>
+              <th>Thời hạn</th>
+              <th>Lưu trữ</th>
+              <th>Mục đích</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Access Token (JWT)</td>
+              <td>userId, email, roles, exp</td>
+              <td><span class="badge yellow">30 phút</span></td>
+              <td>In-memory JS (không lưu localStorage)</td>
+              <td>Xác thực mỗi API request</td>
+            </tr>
+            <tr>
+              <td>Refresh Token</td>
+              <td>Chuỗi ngẫu nhiên, hash SHA-256 lưu DB</td>
+              <td><span class="badge green">24 giờ</span></td>
+              <td>HttpOnly Cookie</td>
+              <td>Cấp lại Access Token khi hết hạn</td>
+            </tr>
+            <tr>
+              <td>Pending Token</td>
+              <td>Chuỗi ngẫu nhiên, hash lưu DB</td>
+              <td><span class="badge gray">5 phút</span></td>
+              <td>HttpOnly Cookie</td>
+              <td>Xác thực bước 2 của 2FA login</td>
+            </tr>
+            <tr>
+              <td>Email Confirm Token</td>
+              <td>Token do ASP.NET Identity tạo</td>
+              <td><span class="badge blue">1 ngày (mặc định)</span></td>
+              <td>URL link trong email</td>
+              <td>Xác nhận email khi đăng ký</td>
+            </tr>
+            <tr>
+              <td>Password Reset Token</td>
+              <td>Token do ASP.NET Identity tạo</td>
+              <td><span class="badge blue">1 giờ</span></td>
+              <td>URL link trong email</td>
+              <td>Reset mật khẩu qua email</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <p style="font-weight:600; margin-bottom:8px">Luồng Refresh Token</p>
+        <p style="color:#475569; font-size:0.88rem; margin-bottom:10px">Khi Access Token hết hạn, client gọi
+          <code>POST /api/auth/refresh-access-token</code> — server đọc refresh token từ HttpOnly cookie, tìm trong DB,
+          kiểm tra còn hiệu lực, cấp Access Token mới.
+        </p>
+        <div class="code"><span class="cmt">// CookieService đọc từ HttpOnly cookie — client không cần gửi gì</span>
+          <span class="kw">var</span> rawToken = _cookieService.<span class="cls">GetRefreshToken</span>();
+
+          <span class="cmt">// Hash và tìm trong DB, kiểm tra IsActive và User.IsActive</span>
+          <span class="kw">var</span> tokenHash = <span class="cls">TokenService</span>.<span
+            class="cls">HashToken</span>(rawToken);
+          <span class="kw">var</span> stored = <span class="kw">await</span> _db.RefreshTokens
+          .<span class="cls">Include</span>(t => t.User)
+          .<span class="cls">FirstOrDefaultAsync</span>(t => t.TokenHash == tokenHash);
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ 10. EXTERNAL LOGIN ═══════════ -->
+    <section class="section" id="s10">
+      <div class="section-title">
+        <div class="section-num">10</div>
+        <h2>External Login (GitHub / Google)</h2>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="card">
+          <p style="font-weight:600; margin-bottom:12px"><svg style="vertical-align:middle;margin-right:6px" width="16"
+              height="16" viewBox="0 0 24 24" fill="#e2e8f0">
+              <path
+                d="M12 0C5.37 0 0 5.373 0 12c0 5.303 3.438 9.8 8.205 11.387.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.807 5.625-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.573C20.565 21.795 24 17.298 24 12c0-6.627-5.373-12-12-12z" />
+            </svg>GitHub OAuth 2.0</p>
+          <div class="flow">
+            <div class="flow-item">
+              <div class="flow-dot ok">1</div>
+              <div class="flow-body">
+                <div class="flow-title">Frontend redirect đến GitHub</div>
+                <div class="flow-desc">Tạo <code>state</code> ngẫu nhiên (chống CSRF), lưu sessionStorage. Redirect đến
+                  <code>github.com/login/oauth/authorize</code> với <code>scope: user:email</code>.
+                </div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">2</div>
+              <div class="flow-body">
+                <div class="flow-title">GitHub callback với code</div>
+                <div class="flow-desc">GitHub redirect về <code>github-callback.html</code> kèm <code>code</code> và
+                  <code>state</code>. Frontend verify state rồi POST code lên server.
+                </div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">3</div>
+              <div class="flow-body">
+                <div class="flow-title">POST /api/auth/github/callback</div>
+                <div class="flow-desc">Server đổi code → GitHub access token → lấy profile. Nếu email ẩn → gọi thêm
+                  <code>/user/emails</code> để lấy primary verified email.
+                </div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">4</div>
+              <div class="flow-body">
+                <div class="flow-title">Tìm / tạo / link user</div>
+                <div class="flow-desc">Tìm theo <code>AspNetUserLogins</code> (GitHub ID) → tìm theo email → tạo mới.
+                  Gán role <code>User</code> cho tài khoản mới. <code>EmailConfirmed = true</code> vì GitHub đã xác
+                  thực.</div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">5</div>
+              <div class="flow-body">
+                <div class="flow-title">Cấp JWT + Refresh Token</div>
+                <div class="flow-desc">Tương tự login thường. Access token trả về response, refresh token set vào
+                  HttpOnly cookie.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <p style="font-weight:600; margin-bottom:12px">Google OAuth 2.0 + OpenID Connect</p>
+          <div class="flow">
+            <div class="flow-item">
+              <div class="flow-dot ok">1</div>
+              <div class="flow-body">
+                <div class="flow-title">Redirect đến /api/auth/google/login</div>
+                <div class="flow-desc">Server tạo challenge redirect. ASP.NET Core xử lý OAuth flow nội bộ.</div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">2</div>
+              <div class="flow-body">
+                <div class="flow-title">Google callback về server</div>
+                <div class="flow-desc">Server nhận code, đổi lấy id_token + access token, lấy profile từ OpenID Connect.
+                </div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">3</div>
+              <div class="flow-body">
+                <div class="flow-title">Tìm / tạo / link user</div>
+                <div class="flow-desc">Tương tự GitHub. Email đã verified từ Google. Link vào
+                  <code>AspNetUserLogins</code>.
+                </div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">4</div>
+              <div class="flow-body">
+                <div class="flow-title">Set oauth_access_token cookie</div>
+                <div class="flow-desc">Server set JWT vào cookie tạm, redirect về <code>login.html</code>. Frontend đọc
+                  cookie, xóa ngay, lưu token vào biến JS.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ 11. AUTHORIZATION ═══════════ -->
+    <section class="section" id="s11">
+      <div class="section-title">
+        <div class="section-num">11</div>
+        <h2>Authorization — Phân quyền</h2>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <p>Project dùng kết hợp <strong>Role-based</strong>, <strong>Claims-based</strong>,
+          <strong>Policy-based</strong> và <strong>Resource-based</strong> authorization.
+        </p>
+      </div>
+
+      <div class="table-wrap" style="margin-bottom:16px">
+        <table>
+          <thead>
+            <tr>
+              <th>Loại</th>
+              <th>Dựa trên</th>
+              <th>Ví dụ trong project</th>
+              <th>Endpoint</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Role-based</td>
+              <td>Role của user</td>
+              <td><code>[Authorize(Roles = "Admin")]</code></td>
+              <td>GET /api/admin/users</td>
+            </tr>
+            <tr>
+              <td>Claims-based</td>
+              <td>Claim <code>permission</code> trong JWT</td>
+              <td><code>p.RequireClaim("permission", Permissions.UsersRead)</code></td>
+              <td>GET /api/users</td>
+            </tr>
+            <tr>
+              <td>Policy-based</td>
+              <td>Claims-based Requirement được đặt tên</td>
+              <td><code>[Authorize(Policy = Policy.GetUser)]</code></td>
+              <td>GET /api/users</td>
+            </tr>
+            <tr>
+              <td>Resource-based</td>
+              <td>User ID so với resource</td>
+              <td><code>SameUserRequirement</code> — chỉ sửa profile của chính mình</td>
+              <td>PUT /api/users/{id}/profile</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+
+      <div class="grid-3" style="margin-bottom:16px">
+        <div class="box">
+          <div class="box-label green">users.read</div>
+          <p>Gán cho <strong>Employee</strong> và <strong>Admin</strong>. Cho phép đọc danh sách user qua
+            <code>GET /api/users</code>.
+          </p>
+        </div>
+        <div class="box">
+          <div class="box-label red">users.delete</div>
+          <p>Chỉ gán cho <strong>Admin</strong>. Cho phép xóa (soft delete) user qua
+            <code>DELETE /api/admin/users/{id}</code>.
+          </p>
+        </div>
+        <div class="box">
+          <div class="box-label yellow">profile.edit</div>
+          <p>Dùng trong <strong>Resource-based</strong> policy <code>SameUserRequirement</code>, không kiểm tra claim mà
+            so sánh ID.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <p style="font-weight:600; margin-bottom:8px">Đăng ký policy từ claim trong AuthorizationExtensions.cs</p>
+        <div class="code" style="white-space:pre-wrap;word-break:break-all;"><span
+            class="cls">AddAuthorizationBuilder</span>()
+          .<span class="cls">AddPolicy</span>(<span class="cls">Permissions</span>.UsersRead, p =>
+          p.<span class="cls">RequireClaim</span>(<span class="str">"permission"</span>, <span
+            class="cls">Permissions</span>.UsersRead))
+          .<span class="cls">AddPolicy</span>(<span class="cls">Permissions</span>.UsersDelete, p =>
+          p.<span class="cls">RequireClaim</span>(<span class="str">"permission"</span>, <span
+            class="cls">Permissions</span>.UsersDelete))
+          .<span class="cls">AddPolicy</span>(<span class="cls">Permissions</span>.ProfileEdit, p =>
+          p.<span class="cls">AddRequirements</span>(<span class="kw">new</span> <span
+            class="cls">SameUserRequirement</span>()));</div>
+      </div>
+
+      <!-- Policy & Resource-based -->
+      <div class="section-title" style="margin-top:24px; border-bottom-color:#e2e8f0;">
+        <div class="section-num" style="width:auto; padding:0 10px; font-size:0.75rem;">Policy</div>
+        <h2 style="font-size:1rem; color:#0f172a;">Policy-based &amp; Resource-based</h2>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="card">
+          <p style="font-weight:600; margin-bottom:8px">Policy: UsersRead</p>
+          <div class="code" style="white-space:pre-wrap;word-break:break-all;"><span class="cmt">// Controller dùng
+              attribute</span>
+            [<span class="cls">Authorize</span>(Policy = <span class="cls">Permissions</span>.UsersRead)]
+            [<span class="cls">HttpGet</span>(<span class="str">"users"</span>)]
+            <span class="kw">public async</span> <span class="cls">Task</span>&lt;<span
+              class="cls">IActionResult</span>&gt; <span class="cls">GetUsers</span>() { }
+          </div>
+          <p style="margin-top:10px;color:#475569;font-size:0.88rem;">JWT phải chứa claim
+            <code>permission = "users.read"</code> — chỉ Employee và Admin có.
+          </p>
+        </div>
+        <div class="card">
+          <p style="font-weight:600; margin-bottom:8px">Resource-based: SameUserRequirement</p>
+          <div class="code" style="white-space:pre-wrap;word-break:break-all;"><span class="cmt">// Gọi thủ công trong
+              controller</span>
+            <span class="kw">var</span> result = <span class="kw">await</span> _authorizationService
+            .<span class="cls">AuthorizeAsync</span>(
+            User, id,
+            <span class="cls">Permissions</span>.ProfileEdit);
+
+            <span class="kw">if</span> (!result.Succeeded)
+            <span class="kw">return</span> <span class="cls">StatusCode</span>(<span class="op">403</span>, ...);
+          </div>
+          <p style="margin-top:10px;color:#475569;font-size:0.88rem;"><code>SameUserHandler</code> so sánh
+            <code>sub</code> trong JWT với <code>id</code> trên URL — chỉ chính chủ mới được sửa.
+          </p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <p style="font-weight:600; margin-bottom:8px">Admin endpoints — chỉ dành cho role Admin</p>
+        <div class="tag-row">
+          <span class="badge blue">GET /api/admin/users</span>
+          <span class="badge blue">GET /api/admin/users/{id}</span>
+          <span class="badge blue">GET /api/admin/employees</span>
+          <span class="badge red">PATCH /api/admin/users/{id}/lock</span>
+          <span class="badge green">PATCH /api/admin/users/{id}/unlock</span>
+        </div>
+      </div>
+
+      <!-- ── Câu hỏi nổi bật (accordion) ── -->
+      <details style="margin-top: 32px;" class="qa-block">
+        <summary style="
+        list-style: none;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+        border: 2px solid #bfdbfe;
+        padding: 20px 28px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        user-select: none;
+      ">
+          <!-- dấu hỏi trang trí -->
+          <div style="
+          position: absolute; right: 68px; top: 50%; transform: translateY(-50%);
+          font-size: 5rem; font-weight: 900; color: #bfdbfe; line-height: 1;
+          pointer-events: none;
+        ">?</div>
+
+          <div style="
+          background: #2563eb; color: #fff;
+          font-size: 0.7rem; font-weight: 800;
+          letter-spacing: 0.1em; text-transform: uppercase;
+          padding: 4px 12px; border-radius: 20px;
+          flex-shrink: 0;
+        ">Câu hỏi quan trọng</div>
+
+          <p style="font-size: 1.05rem; font-weight: 700; color: #1e3a5f; line-height: 1.4; margin: 0; flex: 1;">
+            Khi nào nên lấy claims từ JWT? Khi nào nên lấy từ database?
+          </p>
+
+          <!-- chevron icon -->
+          <div class="qa-chevron" style="
+          flex-shrink: 0;
+          width: 32px; height: 32px;
+          background: #2563eb; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          transition: transform 0.25s ease;
+        ">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 4.5L7 9.5L12 4.5" stroke="white" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </div>
+        </summary>
+
+        <!-- Nội dung đáp án -->
+        <div style="
+        border: 2px solid #bfdbfe;
+        border-top: none;
+        border-radius: 0 0 14px 14px;
+        background: #fff;
+        padding: 24px 28px;
+      ">
+          <div class="compare" style="margin-bottom:0;">
+            <div style="
+            background: #fff;
+            border: 1.5px solid #86efac;
+            border-radius: 10px;
+            padding: 16px 18px;
+          ">
+              <p style="font-weight: 700; color: #15803d; margin-bottom: 10px;">✅ Lấy từ JWT khi…</p>
+              <ul style="padding-left: 18px; display: flex; flex-direction: column; gap: 7px;">
+                <li style="color: #374151; font-size: 0.92rem;">Dữ liệu <strong>ít thay đổi</strong> — role, permission,
+                  userId, email</li>
+                <li style="color: #374151; font-size: 0.92rem;">Cần <strong>hiệu năng cao</strong> — không mất 1
+                  round-trip vào DB cho mỗi request</li>
+                <li style="color: #374151; font-size: 0.92rem;">Hệ thống <strong>stateless</strong> — microservice, API
+                  gateway cần tự xác minh token</li>
+                <li style="color: #374151; font-size: 0.92rem;">Thông tin chỉ cần <strong>đúng tại thời điểm đăng
+                    nhập</strong> — không cần realtime</li>
+              </ul>
+              <div style="margin-top:12px; background:#f0fdf4; border-radius:6px; padding:8px 12px;">
+                <p style="font-size:0.8rem; color:#166534; font-weight:600;">Trong project này:</p>
+                <p style="font-size:0.82rem; color:#374151;"><code>sub</code>, <code>email</code>, <code>role</code>,
+                  <code>permission</code>, <code>fullName</code> — đọc thẳng từ <code>User.Claims</code> trong
+                  controller, không query DB.
+                </p>
+              </div>
+            </div>
+
+            <div style="
+            background: #fff;
+            border: 1.5px solid #fca5a5;
+            border-radius: 10px;
+            padding: 16px 18px;
+          ">
+              <p style="font-weight: 700; color: #dc2626; margin-bottom: 10px;">⚠️ Lấy từ database khi…</p>
+              <ul style="padding-left: 18px; display: flex; flex-direction: column; gap: 7px;">
+                <li style="color: #374151; font-size: 0.92rem;">Cần dữ liệu <strong>realtime</strong> — token chưa hết
+                  hạn nhưng user đã bị khóa (<code>IsActive = false</code>)</li>
+                <li style="color: #374151; font-size: 0.92rem;">Quyền vừa bị <strong>thu hồi</strong> — đổi role, xóa
+                  permission sau khi cấp token</li>
+                <li style="color: #374151; font-size: 0.92rem;">Thao tác <strong>nhạy cảm</strong> — đổi mật khẩu, xóa
+                  tài khoản, thanh toán</li>
+                <li style="color: #374151; font-size: 0.92rem;">Cần dữ liệu <strong>đầy đủ</strong> không có trong token
+                  — avatar, dateOfBirth, department</li>
+              </ul>
+              <div style="margin-top:12px; background:#fef2f2; border-radius:6px; padding:8px 12px;">
+                <p style="font-size:0.8rem; color:#991b1b; font-weight:600;">Trong project này:</p>
+                <p style="font-size:0.82rem; color:#374151;"><code>GET /api/me</code> lấy userId từ JWT rồi gọi
+                  <code>_userManager.FindByIdAsync()</code> để lấy profile mới nhất từ DB, không tin hoàn toàn vào
+                  <code>fullName</code> trong token.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style="margin-top:16px; background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:12px 16px;">
+            <p style="font-size:0.88rem; color:#92400e;">
+              <strong>Nguyên tắc chung:</strong> JWT phù hợp cho <em>authorization</em> (ai được làm gì). Database cần
+              thiết cho <em>state thực tế</em> của user (họ còn active không, dữ liệu mới nhất là gì). Token ngắn hạn
+              (30 phút) giúp thu hẹp khoảng lệch giữa hai nguồn.
+            </p>
+          </div>
+        </div>
+      </details>
+
+      <style>
+        .qa-block summary::-webkit-details-marker {
+          display: none;
+        }
+
+        .qa-block[open] summary {
+          border-radius: 14px 14px 0 0;
+          border-bottom-color: transparent;
+        }
+
+        .qa-block[open] .qa-chevron {
+          transform: rotate(180deg);
+        }
+      </style>
+    </section>
+
+    <!-- ═══════════ 12. PASSWORD MANAGEMENT ═══════════ -->
+    <section class="section" id="s12">
+      <div class="section-title">
+        <div class="section-num">12</div>
+        <h2>Password Management</h2>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <p style="font-weight:600; margin-bottom:10px">Forgot Password</p>
+          <div class="flow">
+            <div class="flow-item">
+              <div class="flow-dot ok">1</div>
+              <div class="flow-body">
+                <div class="flow-title">POST /api/auth/forgot-password</div>
+                <div class="flow-desc">Luôn trả thành công dù email có tồn tại hay không — không tiết lộ thông tin.
+                </div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">2</div>
+              <div class="flow-body">
+                <div class="flow-title">Gửi email reset link</div>
+                <div class="flow-desc">URL: <code>/api/auth/reset-password?userId=...&amp;token=...</code>. Timeout
+                  email 30 giây.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <p style="font-weight:600; margin-bottom:10px">Reset Password</p>
+          <div class="flow">
+            <div class="flow-item">
+              <div class="flow-dot ok">1</div>
+              <div class="flow-body">
+                <div class="flow-title">POST /api/auth/reset-password</div>
+                <div class="flow-desc">Verify token, đặt mật khẩu mới. Reset <code>AccessFailedCount</code> và
+                  <code>LockoutEnd</code>.
+                </div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">2</div>
+              <div class="flow-body">
+                <div class="flow-title">Gửi email thông báo</div>
+                <div class="flow-desc">Fire-and-forget — không block response nếu email thông báo thất bại.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <p style="font-weight:600; margin-bottom:10px">Change Password</p>
+          <div class="flow">
+            <div class="flow-item">
+              <div class="flow-dot ok">1</div>
+              <div class="flow-body">
+                <div class="flow-title">POST /api/auth/change-password</div>
+                <div class="flow-desc">Yêu cầu <code>[Authorize]</code>. Verify mật khẩu hiện tại, kiểm tra mật khẩu mới
+                  ≠ cũ.</div>
+              </div>
+            </div>
+            <div class="flow-item">
+              <div class="flow-dot ok">2</div>
+              <div class="flow-body">
+                <div class="flow-title">Gửi email xác nhận</div>
+                <div class="flow-desc">Fire-and-forget — kèm link forgot-password đề phòng không phải user thực hiện.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ 13. USER PROFILE ═══════════
+  <section class="section" id="s13">
+    <div class="section-title">
+      <div class="section-num">13</div>
+      <h2>User Profile</h2>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <p>Các endpoint quản lý profile người dùng, được bảo vệ bởi JWT và resource-based authorization.</p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Endpoint</th>
+            <th>Mô tả</th>
+            <th>Quyền</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GET /api/me</td>
+            <td>Lấy profile của chính mình</td>
+            <td><span class="badge green">Đã đăng nhập</span></td>
+          </tr>
+          <tr>
+            <td>PUT /api/users/{id}/profile</td>
+            <td>Cập nhật profile (FullName, Avatar, DateOfBirth) — partial update</td>
+            <td><span class="badge yellow">Cùng user ID</span></td>
+          </tr>
+          <tr>
+            <td>GET /api/users</td>
+            <td>Danh sách tất cả user active</td>
+            <td><span class="badge purple">Admin / Employee</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <p style="font-weight:600; margin-bottom:8px">UserProfileDto — dữ liệu trả về</p>
+      <div class="tag-row">
+        <span class="badge gray">id</span>
+        <span class="badge gray">email</span>
+        <span class="badge gray">fullName</span>
+        <span class="badge gray">avatar</span>
+        <span class="badge gray">dateOfBirth</span>
+        <span class="badge gray">department</span>
+        <span class="badge gray">roles[]</span>
+        <span class="badge gray">createdAt</span>
+        <span class="badge gray">lastLoginAt</span>
+        <span class="badge green">isActive</span>
+      </div>
+    </div>
+  </section> -->
+
+  </div>
+
+  <script>
+    // Biến mỗi .section thành accordion: header (section-title) + body (phần còn lại)
+    document.querySelectorAll('.container > .section').forEach(section => {
+      // Lấy section-title gốc làm header
+      const titleEl = section.querySelector(':scope > .section-title');
+      if (!titleEl) return;
+
+      const h2Text = titleEl.querySelector('h2')?.innerHTML || '';
+      const numText = titleEl.querySelector('.section-num')?.textContent || '';
+
+      // Tạo header button
+      const header = document.createElement('div');
+      header.className = 'section-header';
+      header.innerHTML = `
+      <div class="section-num">${numText}</div>
+      <h2>${h2Text}</h2>
+      <div class="section-chevron">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M1.5 4L6 8.5L10.5 4" stroke="#64748b" stroke-width="1.8"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>`;
+
+      // Gom tất cả node còn lại (sau titleEl) vào body
+      const body = document.createElement('div');
+      body.className = 'section-body';
+
+      // Di chuyển tất cả children sau titleEl vào body
+      const children = [...section.children];
+      children.forEach(child => {
+        if (child !== titleEl) body.appendChild(child);
+      });
+
+      // Xóa titleEl gốc, thêm header + body
+      titleEl.remove();
+      section.appendChild(header);
+      section.appendChild(body);
+
+      // Toggle khi click header
+      header.addEventListener('click', () => {
+        const isOpen = section.classList.toggle('open');
+        header.setAttribute('aria-expanded', isOpen);
+      });
+
+      header.setAttribute('role', 'button');
+      header.setAttribute('aria-expanded', 'false');
+      header.tabIndex = 0;
+      header.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); header.click(); }
+      });
+    });
+  </script>
+
+</body>
+
+</html>

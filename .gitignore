@@ -1,0 +1,22 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.log
+
+## Secrets — never commit these
+.env
+*.pfx
+*.p12
+
+## Rider / JetBrains
+.idea/
+
+## VS Code
+.vscode/
+
+## macOS
+.DS_Store
+.env
